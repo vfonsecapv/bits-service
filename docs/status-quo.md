@@ -342,6 +342,8 @@ The blobstore root and directory keys are configurable in the manifest for all  
 * `cc.<resource_type>.fog_connection.local_root`
 * `cc.<resource_type>.<resource_type>_directory_key`
 
+Note: it is possible to locate all blobstores in the same directory.
+
 ### resources
 
 Root: `cc.droplets.fog_connection.local_root`
