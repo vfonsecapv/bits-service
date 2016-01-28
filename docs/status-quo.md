@@ -379,4 +379,6 @@ filename appears to be related to the stack
 
 ## Notes
 
-* There is an open issue on CC for orphan cleanup in the blobstore (100GB of orphan packages & droplets in blobstore)[https://github.com/cloudfoundry/cloud_controller_ng/issues/440] | (PR for packages)[https://github.com/cloudfoundry/cloud_controller_ng/pull/461]
+* There is an open issue on CC for orphan cleanup in the blobstore
+** [100GB of orphan packages & droplets in blobstore](https://github.com/cloudfoundry/cloud_controller_ng/issues/440)
+** [PR for packages](https://github.com/cloudfoundry/cloud_controller_ng/pull/461)
