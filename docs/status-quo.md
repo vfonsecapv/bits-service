@@ -14,19 +14,25 @@ Represent parts of an app that has been pushed to CF at some point in the past. 
 
 The collection of all current App Bits for a given application.
 
+**Lifecycle**: Deleting an app will delete the blobstore entry.
+
 ### Buildpacks
 
 A Cloud Foundry Buildpack that is being used to build a pushed app.
+
+**Lifecycle**: Deleting a buildpack will delete it from the blobstore.
 
 ### Buildpacks Cache
 
 Used to store artifacts that are used by a given buildpack (e.g. downloads from the internet like gems a.o.). The cache is specific to a given app.
 
+**Lifecycle**: Blobs for an app will be cleaned when the app is deleted. There is also a bulk delete endpoint.
+
 ### Droplets
 
 Droplets are compiled application packages plus additional artifacts injected by the buildpack. A droplet is stored in the blob store after the corresponding app has been staged on a DEA. In order to run the staged app, (another) DEA will retrieve the droplet from the Cloud Controller.
 
-Lifecycle: Current and previous versions of a droplet are kept around. See `droplet_uploader.rb`.
+**Lifecycle**: Current and previous versions of a droplet are kept around. See `droplet_uploader.rb`.
 
 ## Flows & Request Sequences
 
@@ -352,21 +358,25 @@ Location: `<root>/<directory_key>/:sha`
 
 ### packages
 
-Location: /:resource_type/:guid
+Location: `/:resource_type/:guid`
 guid is the guid of the app (v2)
 
 ### buildpacks
 
-Location: /:resourcetype/:guid:sha
+Location: `/:resourcetype/:guid:sha`
 guid is the guid of the buildpack
 
 ### droplets
 
-Location: /:resource_type/:guid/:sha
+Location: `/:resource_type/:guid/:sha`
 V2: guid is the guid of the app
 V3: guid is the guid of the droplet
 
 ### droplets - buildpackcache (part of droplets)
 
-Location: /:resource_type/buildpack_cache/:guid/:filename
+Location: `/:resource_type/buildpack_cache/:guid/:filename`
 filename appears to be related to the stack
+
+## Notes
+
+* There is an open issue on CC for orphan cleanup in the blobstore (100GB of orphan packages & droplets in blobstore)[https://github.com/cloudfoundry/cloud_controller_ng/issues/440] | (PR for packages)[https://github.com/cloudfoundry/cloud_controller_ng/pull/461]
