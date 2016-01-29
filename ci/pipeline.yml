@@ -1,0 +1,15 @@
+resources:
+- name: git-bits-service
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/bits-service.git
+    branch: master
+
+jobs:
+- name: run-tests
+  plan:
+  - get: git-bits-service
+    trigger: true
+  - task: run-tests
+    file: git-bits-service/ci/tasks/run-tests.yml
+
