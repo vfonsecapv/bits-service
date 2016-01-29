@@ -1,7 +1,7 @@
 ---
 platform: linux
 
-image: docker:///ruby/2.3-latest
+image: docker:///ruby#2.3
 
 inputs:
 - name: git-bits-service
