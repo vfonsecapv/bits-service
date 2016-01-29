@@ -1,0 +1,10 @@
+---
+platform: linux
+
+image: docker:///ruby#2.2.4
+
+inputs:
+- name: git-bits-service
+
+run:
+  path: git-bits-service/ci/scripts/run-tests.sh
