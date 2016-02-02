@@ -2,6 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     diff-lcs (1.2.5)
+    posix-spawn (0.3.9)
     rack (1.6.4)
     rack-protection (1.5.3)
       rack
@@ -30,9 +31,10 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  posix-spawn
   rack-test
   rspec
   sinatra
 
 BUNDLED WITH
-   1.10.6
+   1.11.2

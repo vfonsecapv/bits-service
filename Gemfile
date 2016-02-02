@@ -5,4 +5,5 @@ gem 'sinatra'
 group :development do
   gem 'rspec'
   gem 'rack-test'
+  gem 'posix-spawn'
 end
