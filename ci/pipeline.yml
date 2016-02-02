@@ -1,9 +1,33 @@
+groups:
+- name: bits-service
+  jobs:
+  - run-tests
+- name: bits-service-release
+  jobs:
+  - build-deploy-and-test
+
 resources:
 - name: git-bits-service
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/bits-service.git
     branch: master
+- name: git-bits-service-release
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry-incubator/bits-service-release.git
+    branch: master
+- name: bosh-lite
+  type: bosh-deployment
+  source:
+    target: {{bosh-target}}
+    username: {{bosh-username}}
+    password: {{bosh-password}}
+    deployment: bits-service
+- name: stemcell
+  type: bosh-io-stemcell
+  source:
+    name: bosh-warden-boshlite-ubuntu-trusty-go_agent
 
 jobs:
 - name: run-tests
@@ -12,4 +36,31 @@ jobs:
     trigger: true
   - task: run-tests
     file: git-bits-service/ci/tasks/run-tests.yml
-
+- name: build-deploy-and-test
+  plan:
+  - aggregate:
+    - get: git-bits-service-release
+      trigger: true
+    - get: stemcell
+  - task: create-release-and-manifest
+    file: git-bits-service-release/ci/tasks/create-release-and-manifest.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+  - put: bosh-lite
+    params:
+      cleanup: true
+      manifest: assets/manifest.yml
+      stemcells:
+      - stemcell/stemcell.tgz
+      releases:
+      - assets/bits-service-*.tgz
+  - task: test
+    config:
+      inputs:
+      - name: git-bits-service-release
+      image: docker:///tutum/curl
+      run:
+        path: git-bits-service-release/test/test.sh
