@@ -21,10 +21,4 @@ describe Bits::Routes::Buildpacks do
       expect(last_response.status).to eq(201)
     end
   end
-
-  it "says hello" do
-    get '/hi'
-    expect(last_response).to be_ok
-    expect(last_response.body).to eq('Hello World!')
-  end
 end
