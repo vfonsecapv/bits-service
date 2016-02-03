@@ -17,6 +17,26 @@
 
 * If the IP address doesn't match, check the [device list](https://control.softlayer.com/devices)
 
+# Concourse
+
+```
+# name the target 'flintstone' and login
+fly --target flintstone login --concourse-url 'http://10.155.248.166:8080'
+
+# if the auth expired, re-login using the previously named target
+fly -t flintstone login
+
+# create or update a pipeline from yaml file
+fly -t flintstone set-pipeline -p test-exists -c test-exists.yml
+
+# destroy a pipeline
+fly -t flintstone destroy-pipeline -p test-exists
+
+# hijack into a job
+fly intercept -t flintstone --job bits-service/run-tests
+```
+
+
 # Undecided
 
 * Do we use the public Slack or a mailing list?
