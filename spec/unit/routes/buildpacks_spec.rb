@@ -79,11 +79,26 @@ module Bits
 
       it 'requires a file to be uploaded' do
         allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(nil)
+        expect(Bits::BlobstoreFactory).to_not receive(:new)
+
         put "/buildpacks/#{buildpack_guid}", nil, headers
+
         expect(last_response.status).to eq(400)
         json = MultiJson.load(last_response.body)
         expect(json['code']).to eq(290002)
         expect(json['description']).to match(/a file must be provided/)
+      end
+
+      it 'does not allow non-zip files' do
+        allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return("/path/to/tarfile.tar.gz")
+        expect(Bits::BlobstoreFactory).to_not receive(:new)
+
+        put "/buildpacks/#{buildpack_guid}", nil, headers
+
+        expect(last_response.status).to eql 400
+        json = MultiJson.load(last_response.body)
+        expect(json['code']).to eq(290002)
+        expect(json['description']).to match(/only zip files allowed/)
       end
     end
   end
