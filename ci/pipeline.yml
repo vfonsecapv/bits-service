@@ -103,7 +103,7 @@ jobs:
   - task: generate-cf-manifest
     config:
       platform: linux
-      image: docker:///concourse/concourse-ci
+      image: docker:///flintstonecf/ci
       inputs:
         - name: git-bits-service-release
         - name: git-cf-release
@@ -132,7 +132,7 @@ jobs:
   - task: run-cats
     config:
       platform: linux
-      image: docker:///concourse/concourse-ci
+      image: docker:///flintstonecf/ci
       inputs:
         - name: git-bits-service-release
       run:
