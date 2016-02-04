@@ -20,20 +20,23 @@ module Bits
             use_nginx: false,
           },
         }
+        begin
+          upload_params = UploadParams.new(params, use_nginx: config[:nginx][:use_nginx])
 
-        upload_params = UploadParams.new(params, use_nginx: config[:nginx][:use_nginx])
+          uploaded_filepath = upload_params.upload_filepath('buildpack')
+          raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
+          raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'only zip files allowed') unless File.extname(uploaded_filepath) == '.zip'
 
-        uploaded_filepath = upload_params.upload_filepath('buildpack')
-        raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
-        raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'only zip files allowed') unless File.extname(uploaded_filepath) == '.zip'
+          sha = Digester.new.digest_path(uploaded_filepath)
+          destination_key = "#{params[:guid]}_#{sha}"
 
-        sha = Digester.new.digest_path(uploaded_filepath)
-        destination_key = "#{params[:guid]}_#{sha}"
+          blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
+          blobstore.cp_to_blobstore(uploaded_filepath, destination_key)
 
-        blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
-        blobstore.cp_to_blobstore(uploaded_filepath, destination_key)
-
-        status 201
+          status 201
+        ensure
+          FileUtils.rm_f(uploaded_filepath) if uploaded_filepath
+        end
       end
 
       error Errors::ApiError do |error|

@@ -14,6 +14,10 @@ module Bits
       Rack::Test::UploadedFile.new(File.new(zip_filepath))
     end
 
+    let(:non_zip_file) do
+      Rack::Test::UploadedFile.new(Tempfile.new('foo'))
+    end
+
     let(:zip_file_sha) { Digester.new.digest_path(zip_file) }
 
     let(:upload_body) { { buildpack: zip_file } }
@@ -24,10 +28,27 @@ module Bits
       Fog.unmock!
     end
 
+    after(:each) do
+      FileUtils.rm_f(zip_filepath)
+      FileUtils.rm_f(non_zip_file.tempfile.path)
+    end
+
     describe 'PUT /buildpacks/:guid' do
-      it 'returns a HTTP status 201 (CREATED)' do
+      it 'returns HTTP status 201' do
         put "/buildpacks/#{buildpack_guid}", upload_body, headers
         expect(last_response.status).to eq(201)
+      end
+
+      it 'stores the uploaded file to the buildpack blobstore using the correct key' do
+        allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+
+        blobstore = double(Bits::Blobstore::Client)
+        expect_any_instance_of(Bits::BlobstoreFactory).to receive(:create_buildpack_blobstore).and_return(blobstore)
+
+        expected_key = "#{buildpack_guid}_#{zip_file_sha}"
+        expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, expected_key)
+
+        put "/buildpacks/#{buildpack_guid}", upload_body, headers
       end
 
       it 'instantiates the blobstore factory with the right config' do
@@ -65,41 +86,82 @@ module Bits
         put "/buildpacks/#{buildpack_guid}", upload_body, headers
       end
 
-      it 'stores the uploaded file to the buildpack blobstore using the correct key' do
+      it 'does not leave the temporary instance of the uploaded file around' do
         allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
-
-        blobstore = double(Bits::Blobstore::Client)
-        expect_any_instance_of(Bits::BlobstoreFactory).to receive(:create_buildpack_blobstore).and_return(blobstore)
-
-        expected_key = "#{buildpack_guid}_#{zip_file_sha}"
-        expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, expected_key)
-
         put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        expect(File.exist?(zip_filepath)).to be_falsy
       end
 
-      it 'requires a file to be uploaded' do
-        allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(nil)
-        expect(Bits::BlobstoreFactory).to_not receive(:new)
+      context 'when no file is being uploaded' do
+        before(:each) do
+          allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(nil)
+          expect(Bits::BlobstoreFactory).to_not receive(:new)
+        end
 
-        put "/buildpacks/#{buildpack_guid}", nil, headers
+        it 'returns a corresponding error' do
+          put "/buildpacks/#{buildpack_guid}", nil, headers
 
-        expect(last_response.status).to eq(400)
-        json = MultiJson.load(last_response.body)
-        expect(json['code']).to eq(290002)
-        expect(json['description']).to match(/a file must be provided/)
+          expect(last_response.status).to eq(400)
+          json = MultiJson.load(last_response.body)
+          expect(json['code']).to eq(290002)
+          expect(json['description']).to match(/a file must be provided/)
+        end
       end
 
-      it 'does not allow non-zip files' do
-        allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return("/path/to/tarfile.tar.gz")
-        expect(Bits::BlobstoreFactory).to_not receive(:new)
+      context 'when a non-zip file is being uploaded' do
+        let(:upload_body) {{ buildpack: non_zip_file  }}
 
-        put "/buildpacks/#{buildpack_guid}", nil, headers
+        it 'returns a corresponding error' do
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
 
-        expect(last_response.status).to eql 400
-        json = MultiJson.load(last_response.body)
-        expect(json['code']).to eq(290002)
-        expect(json['description']).to match(/only zip files allowed/)
+          expect(last_response.status).to eql 400
+          json = MultiJson.load(last_response.body)
+          expect(json['code']).to eq(290002)
+          expect(json['description']).to match(/only zip files allowed/)
+        end
+
+        it 'does not leave the temporary instance of the uploaded file around' do
+          filepath = non_zip_file.tempfile.path
+          allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(filepath)
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          expect(File.exist?(filepath)).to be_falsy
+        end
       end
+
+      context 'when the blobstore copy fails' do
+        before(:each) do
+          allow_any_instance_of(Blobstore::Client).to receive(:cp_to_blobstore).and_raise('some error')
+        end
+
+        it 'return HTTP status 500' do
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          expect(last_response.status).to eq(500)
+        end
+
+        it 'does not leave the temporary instance of the uploaded file around' do
+          allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          expect(File.exist?(zip_filepath)).to be_falsy
+        end
+      end
+
+      context 'when the blobstore factory fails' do
+        before(:each) do
+          allow(BlobstoreFactory).to receive(:new).and_raise('some error')
+        end
+
+        it 'return HTTP status 500' do
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          expect(last_response.status).to eq(500)
+        end
+
+        it 'does not leave the temporary instance of the uploaded file around' do
+          allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          expect(File.exist?(zip_filepath)).to be_falsy
+        end
+      end
+
     end
   end
 end
