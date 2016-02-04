@@ -194,6 +194,7 @@ DEPENDENCIES
   cloudfront-signer
   fog
   httpclient
+  i18n
   mime-types (~> 2.6.2)
   posix-spawn
   pry

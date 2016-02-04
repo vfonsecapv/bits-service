@@ -16,7 +16,7 @@ module Bits
 
     let(:zip_file_sha) { Digester.new.digest_path(zip_file) }
 
-    let(:upload_body) { { buildpack: zip_file, buildpack_name: zip_file.path } }
+    let(:upload_body) { { buildpack: zip_file } }
 
     around(:each) do |example|
       Fog.mock!
@@ -75,6 +75,15 @@ module Bits
         expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, expected_key)
 
         put "/buildpacks/#{buildpack_guid}", upload_body, headers
+      end
+
+      it 'requires a file to be uploaded' do
+        allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(nil)
+        put "/buildpacks/#{buildpack_guid}", nil, headers
+        expect(last_response.status).to eq(400)
+        json = MultiJson.load(last_response.body)
+        expect(json['code']).to eq(290002)
+        expect(json['description']).to match(/a file must be provided/)
       end
     end
   end

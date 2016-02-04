@@ -1,6 +1,12 @@
 module Bits
   module Routes
     class Buildpacks < Sinatra::Application
+      configure do
+        set :show_exceptions, :after_handler
+
+        Errors::ApiError.setup_i18n(Dir[File.expand_path('../../vendor/errors/i18n/*.yml', __FILE__)], :en)
+      end
+
       put '/buildpacks/:guid' do
         config = {
           buildpacks: {
@@ -16,17 +22,21 @@ module Bits
         }
 
         blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
-
         upload_params = UploadParams.new(params, use_nginx: config[:nginx][:use_nginx])
 
-        source_path = upload_params.upload_filepath('buildpack')
+        uploaded_filepath = upload_params.upload_filepath('buildpack')
+        raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
 
-        sha = Digester.new.digest_path(source_path)
+        sha = Digester.new.digest_path(uploaded_filepath)
         destination_key = "#{params[:guid]}_#{sha}"
 
-        blobstore.cp_to_blobstore(source_path, destination_key)
+        blobstore.cp_to_blobstore(uploaded_filepath, destination_key)
 
         status 201
+      end
+
+      error Errors::ApiError do |error|
+        halt 400, {description: error.message, code: error.code}.to_json
       end
     end
   end
