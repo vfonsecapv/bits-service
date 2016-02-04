@@ -10,7 +10,7 @@ RUN apt-get update && \
 
 RUN add-apt-repository ppa:brightbox/ruby-ng && \
     apt-get update && \
-    apt-get -y install ruby2.2 && \
+    apt-get -y install ruby2.2 ruby2.2-dev && \
     apt-get clean -y && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
