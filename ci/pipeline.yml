@@ -217,7 +217,7 @@ jobs:
       params: { release: cf-deployment-lock }
   - put: cf-deployment
     params:
-      manifest: git-bits-service-release/ci/manifests/cf-without-flag.yml
+      manifest: git-bits-service-release/ci/manifests/cf-with-flag.yml
       stemcells:
       - stemcell/stemcell.tgz
       releases:
