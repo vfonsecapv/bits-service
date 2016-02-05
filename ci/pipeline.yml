@@ -124,7 +124,6 @@ jobs:
       trigger: true
       passed:
         - build-deploy-and-test
-    - get: stemcell
   - task: create-cf-release
     config:
       platform: linux
@@ -191,7 +190,6 @@ jobs:
     - get: cf-release-version
       params:
         pre: dev
-    - get: stemcell
     - get: git-cf-release
     - get: git-bits-service-release
       trigger: true
