@@ -95,11 +95,12 @@ module Bits
       context 'when no file is being uploaded' do
         before(:each) do
           allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(nil)
-          expect(Bits::BlobstoreFactory).to_not receive(:new)
         end
 
         it 'returns a corresponding error' do
-          put "/buildpacks/#{buildpack_guid}", nil, headers
+          expect(Bits::BlobstoreFactory).to_not receive(:new)
+
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
 
           expect(last_response.status).to eq(400)
           json = MultiJson.load(last_response.body)
