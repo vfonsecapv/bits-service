@@ -7,8 +7,10 @@ groups:
   - build-deploy-and-test
 - name: cf-release
   jobs:
-  - deploy-cf-release
+  - deploy-CF-without-flag
   - CATs
+  - deploy-CF-with-flag
+  - CATs-with-bits
 
 resources:
 - name: git-bits-service
@@ -20,7 +22,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/bits-service-release.git
-    branch: wip-pipeline
+    branch: master
 - name: git-cf-release
   type: git
   source:
@@ -46,20 +48,23 @@ resources:
     name: bosh-warden-boshlite-ubuntu-trusty-go_agent
 
 jobs:
+# BITS-SERVICE
 - name: run-tests
   plan:
   - get: git-bits-service
     trigger: true
   - task: run-tests
     file: git-bits-service/ci/tasks/run-tests.yml
+
+# BITS-RELEASE
 - name: build-deploy-and-test
   plan:
   - aggregate:
     - get: git-bits-service-release
       trigger: true
     - get: stemcell
-  - task: create-release-and-manifest
-    file: git-bits-service-release/ci/tasks/create-release-and-manifest.yml
+  - task: create-release
+    file: git-bits-service-release/ci/tasks/create-bits-release.yml
     config:
       params:
         BOSH_TARGET: {{bosh-target}}
@@ -80,7 +85,9 @@ jobs:
       image: docker:///tutum/curl
       run:
         path: git-bits-service-release/test/test.sh
-- name: deploy-cf-release
+
+# CF-RELEASE
+- name: deploy-CF-without-flag
   plan:
   - aggregate:
     - get: stemcell
@@ -90,7 +97,7 @@ jobs:
       passed:
         - build-deploy-and-test
     - get: stemcell
-  - task: generate-cf-manifest
+  - task: create-cf-release
     config:
       platform: linux
       image: docker:///flintstonecf/ci
@@ -101,24 +108,69 @@ jobs:
         - name: assets
       run:
         path: git-bits-service-release/ci/scripts/create-cf-release.sh
-      params:
-        BOSH_TARGET: {{bosh-target}}
-        BOSH_USERNAME: {{bosh-username}}
-        BOSH_PASSWORD: {{bosh-password}}
   - put: cf-deployment
     params:
-      manifest: assets/manifest.yml
+      manifest: git-bits-service-release/ci/manifests/cf-without-flag.yml
       stemcells:
       - stemcell/stemcell.tgz
       releases:
       - cf-release/release.tgz
-
 - name: CATs
   plan:
   - get: git-bits-service-release
     trigger: true
     passed:
-        - deploy-cf-release
+    - deploy-CF-without-flag
+  - task: run-cats
+    config:
+      platform: linux
+      image: docker:///flintstonecf/ci
+      inputs:
+        - name: git-bits-service-release
+      run:
+        path: git-bits-service-release/ci/scripts/run-errand.sh
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        ERRAND_NAME: acceptance_tests
+
+- name: deploy-CF-with-flag
+  plan:
+  - aggregate:
+    - get: stemcell
+    - get: git-cf-release
+    - get: git-bits-service-release
+      trigger: true
+      passed:
+        - CATs
+    - get: stemcell
+      passed:
+      - deploy-CF-without-flag
+  - task: create-cf-release
+    config:
+      platform: linux
+      image: docker:///flintstonecf/ci
+      inputs:
+        - name: git-bits-service-release
+        - name: git-cf-release
+      outputs:
+        - name: assets
+      run:
+        path: git-bits-service-release/ci/scripts/create-cf-release.sh
+  - put: cf-deployment
+    params:
+      manifest: git-bits-service-release/ci/manifests/cf-without-flag.yml
+      stemcells:
+      - stemcell/stemcell.tgz
+      releases:
+      - cf-release/release.tgz
+- name: CATs-with-bits
+  plan:
+  - get: git-bits-service-release
+    trigger: true
+    passed:
+     - deploy-CF-with-flag
   - task: run-cats
     config:
       platform: linux
