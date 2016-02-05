@@ -819,6 +819,9 @@ module Bits
             ensure
               Process.kill(9, pid)
             end
+
+            FileUtils.rm_f('test.out')
+            FileUtils.rm_f('test.err')
           end
         end
 
