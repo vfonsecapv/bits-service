@@ -20,14 +20,12 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/bits-service-release.git
-    branch: master
+    branch: wip-pipeline
 - name: git-cf-release
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-release.git
-    branch: master
-    submodules: none
-    depth: 1
+    branch: wip-bits-service
 - name: bits-service-deployment
   type: bosh-deployment
   source:
@@ -46,10 +44,6 @@ resources:
   type: bosh-io-stemcell
   source:
     name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-- name: cf-release
-  type: bosh-io-release
-  source:
-    repository: cloudfoundry/cf-release
 
 jobs:
 - name: run-tests
@@ -90,11 +84,7 @@ jobs:
   plan:
   - aggregate:
     - get: stemcell
-    - get: cf-release
     - get: git-cf-release
-      params:
-        submodules: none
-        depth: 1
     - get: git-bits-service-release
       trigger: true
       passed:
@@ -110,7 +100,7 @@ jobs:
       outputs:
         - name: assets
       run:
-        path: git-bits-service-release/ci/scripts/generate-cf-manifest.sh
+        path: git-bits-service-release/ci/scripts/create-cf-release.sh
       params:
         BOSH_TARGET: {{bosh-target}}
         BOSH_USERNAME: {{bosh-username}}
