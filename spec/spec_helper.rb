@@ -14,12 +14,16 @@ Dir[File.expand_path('support/**/*.rb', File.dirname(__FILE__))].each { |file| r
 RSpec.configure do |conf|
   conf.include Rack::Test::Methods
 
+  conf.include IntegrationTestSettings, type: :integration
+  conf.include IntegrationHttp, type: :integration
+  conf.include IntegrationSetupHelpers, type: :integration
+  conf.include IntegrationSetup, type: :integration
+
+  conf.include ConfigFileHelpers
+
   conf.after :each do
     Timecop.return
   end
-
-  #conf.after(:all) { WebMock.disable_net_connect! }
-
 end
 
 def app

@@ -18,6 +18,8 @@ GEM
     crack (0.4.2)
       safe_yaml (~> 1.0.0)
     diff-lcs (1.2.5)
+    domain_name (0.5.20160128)
+      unf (>= 0.0.5, < 1.0.0)
     excon (0.45.4)
     fission (0.5.0)
       CFPropertyList (~> 2.2)
@@ -124,6 +126,8 @@ GEM
       fog-core
       nokogiri (~> 1.5, >= 1.5.11)
     formatador (0.2.5)
+    http-cookie (1.0.2)
+      domain_name (~> 0.5)
     httpclient (2.6.0.1)
     i18n (0.7.0)
     inflecto (0.0.2)
@@ -138,6 +142,7 @@ GEM
     net-scp (1.2.1)
       net-ssh (>= 2.6.5)
     net-ssh (2.9.2)
+    netrc (0.11.0)
     nokogiri (1.6.7.1)
       mini_portile2 (~> 2.0.0.rc2)
     posix-spawn (0.3.9)
@@ -152,6 +157,11 @@ GEM
       rack
     rack-test (0.6.3)
       rack (>= 1.0)
+    rake (10.4.2)
+    rest-client (1.8.0)
+      http-cookie (>= 1.0.2, < 2.0)
+      mime-types (>= 1.16, < 3.0)
+      netrc (~> 0.7)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
       rspec-expectations (~> 3.4.0)
@@ -181,6 +191,9 @@ GEM
     timecop (0.7.1)
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
+    unf (0.1.4)
+      unf_ext
+    unf_ext (0.0.7.2)
     webmock (1.20.4)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
@@ -200,6 +213,8 @@ DEPENDENCIES
   pry
   pry-nav
   rack-test
+  rake
+  rest-client
   rspec
   rspec-collection_matchers
   sinatra (~> 1.4)

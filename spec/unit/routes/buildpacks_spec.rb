@@ -22,10 +22,29 @@ module Bits
 
     let(:upload_body) { { buildpack: zip_file } }
 
+    $config = {
+      buildpacks: {
+        fog_connection: {
+          provider: 'AWS',
+          aws_access_key_id: 'fake_aws_key_id',
+          aws_secret_access_key: 'fake_secret_access_key',
+        },
+      },
+      nginx: {
+        use_nginx: false,
+      },
+    }
+
     around(:each) do |example|
+      config_filepath = create_config_file($config)
+      ENV['BITS_CONFIG_FILE'] = config_filepath
       Fog.mock!
+
       example.run
+
       Fog.unmock!
+      FileUtils.rm_f(config_filepath)
+      ENV.delete('BITS_CONFIG_FILE')
     end
 
     after(:each) do
@@ -163,6 +182,16 @@ module Bits
         end
       end
 
+      context 'when environment variable BITS_CONFIG_FILE is not set' do
+        before(:each) do
+          ENV.delete('BITS_CONFIG_FILE')
+        end
+
+        it 'return HTTP status 500' do
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          expect(last_response.status).to eq(500)
+        end
+      end
     end
   end
 end

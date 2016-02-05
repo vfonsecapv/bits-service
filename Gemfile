@@ -1,5 +1,6 @@
 source 'https://rubygems.org'
 
+gem 'rake'
 gem 'sinatra', '~> 1.4'
 gem 'fog'
 gem 'i18n'
@@ -16,6 +17,7 @@ group :development do
   gem 'timecop'
   gem 'cloudfront-signer'
   gem 'webmock'
+  gem 'rest-client'
 
   gem 'pry'
   gem 'pry-nav'

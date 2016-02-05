@@ -8,18 +8,8 @@ module Bits
       end
 
       put '/buildpacks/:guid' do
-        config = {
-          buildpacks: {
-            fog_connection: {
-              provider: 'AWS',
-              aws_access_key_id: 'fake_aws_key_id',
-              aws_secret_access_key: 'fake_secret_access_key',
-            },
-          },
-          nginx: {
-            use_nginx: false,
-          },
-        }
+        config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE'))
+
         begin
           upload_params = UploadParams.new(params, use_nginx: config[:nginx][:use_nginx])
 

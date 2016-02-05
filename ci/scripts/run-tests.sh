@@ -2,4 +2,4 @@
 
 cd git-bits-service
 
-bundle install && bundle exec rspec spec
+bundle install && bundle exec rake spec:all
