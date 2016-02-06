@@ -60,7 +60,7 @@ module Bits
         expect(last_response.status).to eq(201)
       end
 
-      it 'stores the uploaded file to the buildpack blobstore using the correct key' do
+      it 'stores the uploaded file in the buildpack blobstore using the correct key' do
         allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
 
         blobstore = double(Bits::Blobstore::Client)

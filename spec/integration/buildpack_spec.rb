@@ -2,9 +2,9 @@ require 'spec_helper'
 
 describe 'PUT /buildpack', type: :integration do
   before(:all) do
-     @root_dir = Dir.mktmpdir
+    @root_dir = Dir.mktmpdir
 
-     config = {
+    config = {
       buildpacks: {
         buildpack_directory_key: 'directory-key',
         fog_connection: {
@@ -63,13 +63,12 @@ describe 'PUT /buildpack', type: :integration do
     expect(Bits::Digester.new.digest_path(blobstore_path)).to eq zip_file_sha
   end
 
-  context 'when an invalid request body is being sent' do
+  context 'when an empty request body is being sent' do
     let(:data) { Hash.new }
 
     it 'returns HTTP status 400' do
       response = make_put_request("/buildpacks/#{guid}", data)
       expect(response.code).to eq 400
-      expect(JSON.parse(response.body)['description']).to eq 'The buildpack upload is invalid: a file must be provided'
     end
 
     it 'returns the expected error description' do
