@@ -30,6 +30,10 @@ module Bits
         Fog::Mock.reset
       end
 
+      after do
+        FileUtils.rm_rf(local_dir)
+      end
+
       context 'for a remote blobstore backed by a CDN' do
         subject(:client) do
           Client.new(connection_config, directory_key, cdn)
@@ -820,6 +824,7 @@ module Bits
               Process.kill(9, pid)
             end
 
+            FileUtils.rm_rf(File.dirname(destination_file_path))
             FileUtils.rm_f('test.out')
             FileUtils.rm_f('test.err')
           end
@@ -849,6 +854,8 @@ module Bits
             destination_hexdigest = Digest::SHA2.file(destination_file_path).hexdigest
 
             expect(destination_hexdigest).to eq(source_hexdigest)
+
+            FileUtils.rm_rf(File.dirname(destination_file_path))
           end
         end
       end

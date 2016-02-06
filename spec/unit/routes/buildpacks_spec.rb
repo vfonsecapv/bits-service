@@ -22,21 +22,23 @@ module Bits
 
     let(:upload_body) { { buildpack: zip_file } }
 
-    $config = {
-      buildpacks: {
-        fog_connection: {
-          provider: 'AWS',
-          aws_access_key_id: 'fake_aws_key_id',
-          aws_secret_access_key: 'fake_secret_access_key',
+    let(:config) do
+      {
+        buildpacks: {
+          fog_connection: {
+            provider: 'AWS',
+            aws_access_key_id: 'fake_aws_key_id',
+            aws_secret_access_key: 'fake_secret_access_key',
+          },
         },
-      },
-      nginx: {
-        use_nginx: false,
-      },
-    }
+        nginx: {
+          use_nginx: false,
+        },
+      }
+    end
 
     around(:each) do |example|
-      config_filepath = create_config_file($config)
+      config_filepath = create_config_file(config)
       ENV['BITS_CONFIG_FILE'] = config_filepath
       Fog.mock!
 
@@ -48,7 +50,7 @@ module Bits
     end
 
     after(:each) do
-      FileUtils.rm_f(zip_filepath)
+      FileUtils.rm_rf(File.dirname(zip_filepath))
       FileUtils.rm_f(non_zip_file.tempfile.path)
     end
 

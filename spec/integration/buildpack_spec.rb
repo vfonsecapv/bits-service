@@ -1,28 +1,32 @@
 require 'spec_helper'
 
 describe 'PUT /buildpack', type: :integration do
-  $config = {
-    buildpacks: {
-      fog_connection: {
-        provider: 'local',
-        local_root: '/tmp/test2',
-      },
-    },
-    nginx: {
-      use_nginx: false,
-    },
-  }
-
   before(:all) do
-    start_server($config)
+     @root_dir = Dir.mktmpdir
+
+     config = {
+      buildpacks: {
+        buildpack_directory_key: 'directory-key',
+        fog_connection: {
+          provider: 'local',
+          local_root: @root_dir,
+        },
+      },
+      nginx: {
+        use_nginx: false,
+      },
+    }
+
+    start_server(config)
   end
 
   after(:all) do
     stop_server
+    FileUtils.rm_rf(@root_dir)
   end
 
   after(:each) do
-    FileUtils.rm_f(zip_filepath)
+    FileUtils.rm_rf(File.dirname(zip_filepath))
   end
 
   let(:guid) { SecureRandom.uuid }
@@ -37,7 +41,7 @@ describe 'PUT /buildpack', type: :integration do
   let(:data) { { buildpack: zip_file } }
 
   it 'returns HTTP status 201' do
-    response = make_multipart_put_request("/buildpacks/#{guid}", data)
+    response = make_put_request("/buildpacks/#{guid}", data)
     expect(response.code).to eq 201
   end
 end

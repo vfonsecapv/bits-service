@@ -7,7 +7,6 @@ module IntegrationSetup
 
   def stop_server
     return if @pid.nil?
-
     graceful_kill(@pid)
     FileUtils.rm_f(@config_filepath)
   end
