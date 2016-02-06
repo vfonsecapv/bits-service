@@ -38,10 +38,44 @@ describe 'PUT /buildpack', type: :integration do
     File.new(zip_filepath)
   end
 
+  let(:zip_file_sha) { Bits::Digester.new.digest_path(zip_file) }
+
   let(:data) { { buildpack: zip_file } }
 
   it 'returns HTTP status 201' do
     response = make_put_request("/buildpacks/#{guid}", data)
     expect(response.code).to eq 201
+  end
+
+  it 'correctly stores the file in the blob store' do
+    blobstore_key = "#{guid}_#{zip_file_sha}"
+    blobstore_path = File.join(
+      @root_dir,
+      'directory-key',
+      blobstore_key[0..1],
+      blobstore_key[2..3],
+      blobstore_key,
+    )
+
+    make_put_request("/buildpacks/#{guid}", data)
+
+    expect(File).to exist(blobstore_path)
+    expect(Bits::Digester.new.digest_path(blobstore_path)).to eq zip_file_sha
+  end
+
+  context 'when an invalid request body is being sent' do
+    let(:data) { Hash.new }
+
+    it 'returns HTTP status 400' do
+      response = make_put_request("/buildpacks/#{guid}", data)
+      expect(response.code).to eq 400
+      expect(JSON.parse(response.body)['description']).to eq 'The buildpack upload is invalid: a file must be provided'
+    end
+
+    it 'returns the expected error description' do
+      response = make_put_request("/buildpacks/#{guid}", data)
+      description = JSON.parse(response.body)['description']
+      expect(description).to eq 'The buildpack upload is invalid: a file must be provided'
+    end
   end
 end
