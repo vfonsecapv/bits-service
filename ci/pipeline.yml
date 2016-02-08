@@ -120,10 +120,8 @@ jobs:
         pre: dev
     - get: stemcell
     - get: git-cf-release
-    - get: git-bits-service-release
       trigger: true
-      passed:
-        - build-deploy-and-test
+    - get: git-bits-service-release
   - task: create-cf-release
     config:
       platform: linux
