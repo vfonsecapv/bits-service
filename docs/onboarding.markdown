@@ -34,8 +34,10 @@ fly -t flintstone destroy-pipeline -p test-exists
 
 # hijack into a job
 fly intercept -t flintstone --job bits-service/run-tests
-```
 
+# run a single task with local changes without having to commit to git before
+fly execute -t flintstone --config ci/tasks/run-tests.yml --input=git-bits-service=.
+```
 
 # Undecided
 
