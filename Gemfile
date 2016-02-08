@@ -9,6 +9,7 @@ gem 'steno'
 gem 'mime-types', '~> 2.6.2'
 gem 'activemodel'
 gem 'puma'
+gem 'cloudfront-signer'
 
 group :development do
   gem 'rspec'
@@ -16,7 +17,6 @@ group :development do
   gem 'rack-test'
   gem 'posix-spawn'
   gem 'timecop'
-  gem 'cloudfront-signer'
   gem 'webmock'
   gem 'rest-client'
 
