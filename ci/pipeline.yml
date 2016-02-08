@@ -7,9 +7,9 @@ groups:
   - build-deploy-and-test
 - name: cf-release
   jobs:
-  - deploy-CF-without-flag
+  - create-and-deploy-CF
   - CATs
-  - deploy-CF-with-flag
+  - turn-BITS-flag-ON
   - CATs-with-bits
 
 resources:
@@ -23,7 +23,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/bits-service-release.git
-    branch: master
+    branch: wip-pipeline
 - name: git-cf-release
   type: git
   source:
@@ -109,7 +109,7 @@ jobs:
         path: git-bits-service-release/test/test.sh
 
 # CF-RELEASE
-- name: deploy-CF-without-flag
+- name: create-and-deploy-CF
   serial: true
   plan:
   - aggregate:
@@ -159,11 +159,11 @@ jobs:
   serial: true
   plan:
   - get: cf-deployment-lock
-    passed: [deploy-CF-without-flag]
+    passed: [create-and-deploy-CF]
   - get: git-bits-service-release
     trigger: true
     passed:
-    - deploy-CF-without-flag
+    - create-and-deploy-CF
   - task: run-cats
     config:
       platform: linux
@@ -181,62 +181,46 @@ jobs:
       put: cf-deployment-lock
       params: { release: cf-deployment-lock }
 
-- name: deploy-CF-with-flag
+- name: turn-BITS-flag-ON
   serial: true
   plan:
   - aggregate:
     - get: cf-deployment-lock
       passed: [CATs]
-    - get: cf-release-version
-      params:
-        pre: dev
-    - get: git-cf-release
     - get: git-bits-service-release
       trigger: true
       passed:
         - CATs
     - get: stemcell
       passed:
-      - deploy-CF-without-flag
-  - task: create-cf-release
+      - create-and-deploy-CF
+  - task: turn-BITS-flag-ON
     config:
       platform: linux
       image: docker:///flintstonecf/ci
       inputs:
-        - name: cf-release-version
         - name: git-bits-service-release
-        - name: git-cf-release
       outputs:
         - name: assets
       params:
-        VERSION_FILE: ../cf-release-version/number
+        MANIFEST_PATH: git-bits-service-release/ci/manifests/cf-with-flag.yml
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
       run:
-        path: git-bits-service-release/ci/scripts/create-cf-release.sh
+        path: git-bits-service-release/ci/scripts/deploy-release.sh
     on_failure:
       put: cf-deployment-lock
       params: { release: cf-deployment-lock }
-  - put: cf-deployment
-    params:
-      manifest: git-bits-service-release/ci/manifests/cf-with-flag.yml
-      stemcells:
-      - stemcell/stemcell.tgz
-      releases:
-      - assets/release.tgz
-    on_failure:
-      put: cf-deployment-lock
-      params: { release: cf-deployment-lock }
-  - put: cf-release-version
-    params:
-      file: cf-release-version/number
 - name: CATs-with-bits
   serial: true
   plan:
   - get: cf-deployment-lock
-    passed: [deploy-CF-with-flag]
+    passed: [turn-BITS-flag-ON]
   - get: git-bits-service-release
     trigger: true
     passed:
-     - deploy-CF-with-flag
+     - turn-BITS-flag-ON
   - task: run-cats
     config:
       platform: linux
@@ -250,6 +234,6 @@ jobs:
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
         ERRAND_NAME: acceptance_tests
-      ensure:
-        put: cf-deployment-lock
-        params: { release: cf-deployment-lock }
+    ensure:
+      put: cf-deployment-lock
+      params: { release: cf-deployment-lock }
