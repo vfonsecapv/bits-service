@@ -8,7 +8,7 @@ module Bits
       end
 
       put '/buildpacks/:guid' do
-        config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE'))
+        config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).symbolize_keys
 
         begin
           upload_params = UploadParams.new(params, use_nginx: config[:nginx][:use_nginx])
