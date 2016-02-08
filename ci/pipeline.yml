@@ -28,7 +28,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-release.git
-    branch: master
+    branch: wip-bits-service
 
 - name: bits-service-deployment
   type: bosh-deployment
