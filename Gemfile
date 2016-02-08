@@ -8,6 +8,7 @@ gem 'httpclient'
 gem 'steno'
 gem 'mime-types', '~> 2.6.2'
 gem 'activemodel'
+gem 'puma'
 
 group :development do
   gem 'rspec'
