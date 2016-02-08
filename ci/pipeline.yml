@@ -23,12 +23,12 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry-incubator/bits-service-release.git
-    branch: wip-pipeline
+    branch: master
 - name: git-cf-release
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-release.git
-    branch: wip-bits-service
+    branch: master
 
 - name: bits-service-deployment
   type: bosh-deployment
