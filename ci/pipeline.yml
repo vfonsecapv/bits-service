@@ -4,7 +4,8 @@ groups:
   - run-tests
 - name: bits-service-release
   jobs:
-  - build-deploy-and-test
+  - build-and-deploy
+  - run-system-tests
 - name: cf-release
   jobs:
   - create-and-deploy-CF
@@ -79,7 +80,7 @@ jobs:
     file: git-bits-service/ci/tasks/run-tests.yml
 
 # BITS-RELEASE
-- name: build-deploy-and-test
+- name: build-and-deploy
   plan:
   - aggregate:
     - get: git-bits-service-release
@@ -100,13 +101,16 @@ jobs:
       - stemcell/stemcell.tgz
       releases:
       - assets/bits-service-*.tgz
-  - task: test
-    config:
-      inputs:
-      - name: git-bits-service-release
-      image: docker:///tutum/curl
-      run:
-        path: git-bits-service-release/test/test.sh
+- name: run-system-tests
+  plan:
+    - get: git-bits-service-release
+      trigger: true
+      passed: [build-and-deploy]
+    - task: run-tests
+      file: git-bits-service-release/ci/tasks/run-tests.yml
+      config:
+        params:
+          BITS_SERVICE_ENDPOINT: 10.250.0.2
 
 # CF-RELEASE
 - name: create-and-deploy-CF
