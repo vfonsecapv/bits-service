@@ -6,6 +6,9 @@ groups:
   jobs:
   - build-and-deploy
   - run-system-tests
+- name: clound-controller
+  jobs:
+  - cc-tests
 - name: cf-release
   jobs:
   - create-and-deploy-CF
@@ -14,6 +17,19 @@ groups:
   - CATs-with-bits
 
 resources:
+- name: git-flintstone
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/flintstone.git
+    branch: master
+    private_key: {{github-private-key}}
+
+- name: git-cloud-controller
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/cloud_controller_ng.git
+    branch: wip-bits-service
+
 - name: git-bits-service
   type: git
   source:
@@ -111,6 +127,16 @@ jobs:
       config:
         params:
           BITS_SERVICE_ENDPOINT: 10.250.0.2
+
+# CLOUD CONTROLLER
+- name: cc-tests
+  plan:
+  - aggregate:
+    - get: git-flintstone
+    - get: git-cloud-controller
+      trigger: true
+  - task: run-tests
+    file: git-flintstone/ci/cloud_controller_ng/tasks/run-tests.yml
 
 # CF-RELEASE
 - name: create-and-deploy-CF
