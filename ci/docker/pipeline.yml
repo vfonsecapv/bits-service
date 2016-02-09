@@ -4,7 +4,8 @@ resources:
   source:
     uri: https://github.com/cloudfoundry-incubator/bits-service.git
     branch: master
-    path: ci/docker/Dockerfile
+    paths:
+    - ci/docker/Dockerfile
 - name: flintstone-ci-image
   type: docker-image
   source:
@@ -14,9 +15,9 @@ resources:
     password: {{dockerhub-password}}
 
 jobs:
-  - name: create-image
-    plan:
-    - get: git-bits-service
-      trigger: true
-    - put: flintstone-ci-image
-      params: { build: git-bits-service/ci/docker }
+- name: create-image
+  plan:
+  - get: git-bits-service
+    trigger: true
+  - put: flintstone-ci-image
+    params: { build: git-bits-service/ci/docker }
