@@ -40,7 +40,7 @@ describe 'PUT /buildpack', type: :integration do
 
   let(:zip_file_sha) { Bits::Digester.new.digest_path(zip_file) }
 
-  let(:data) { { buildpack: zip_file } }
+  let(:data) { { buildpack: zip_file, buildpack_name: 'original.zip' } }
 
   it 'returns HTTP status 201' do
     response = make_put_request("/buildpacks/#{guid}", data)
@@ -64,7 +64,7 @@ describe 'PUT /buildpack', type: :integration do
   end
 
   context 'when an empty request body is being sent' do
-    let(:data) { Hash.new }
+    let(:data) { { buildpack_name: 'original.zip' } }
 
     it 'returns HTTP status 400' do
       response = make_put_request("/buildpacks/#{guid}", data)
@@ -75,6 +75,21 @@ describe 'PUT /buildpack', type: :integration do
       response = make_put_request("/buildpacks/#{guid}", data)
       description = JSON.parse(response.body)['description']
       expect(description).to eq 'The buildpack upload is invalid: a file must be provided'
+    end
+  end
+
+  context 'when the original uploaded file name is missing' do
+    let(:data) { { buildpack: zip_file } }
+
+    it 'returns HTTP status 400' do
+      response = make_put_request("/buildpacks/#{guid}", data)
+      expect(response.code).to eq 400
+    end
+
+    it 'returns the expected error description' do
+      response = make_put_request("/buildpacks/#{guid}", data)
+      description = JSON.parse(response.body)['description']
+      expect(description).to eq 'The buildpack upload is invalid: a filename must be specified'
     end
   end
 end

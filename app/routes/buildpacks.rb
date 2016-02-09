@@ -8,14 +8,16 @@ module Bits
       end
 
       put '/buildpacks/:guid' do
-        config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).symbolize_keys
+        config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).deep_symbolize_keys
 
         begin
           upload_params = UploadParams.new(params, use_nginx: config[:nginx][:use_nginx])
 
           uploaded_filepath = upload_params.upload_filepath('buildpack')
+          original_filename = upload_params.original_filename('buildpack')
+          raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a filename must be specified') if original_filename.to_s == ''
+          raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'only zip files allowed') unless File.extname(original_filename) == '.zip'
           raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
-          raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'only zip files allowed') unless File.extname(uploaded_filepath) == '.zip'
 
           sha = Digester.new.digest_path(uploaded_filepath)
           destination_key = "#{params[:guid]}_#{sha}"

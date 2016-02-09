@@ -6,8 +6,9 @@ module Bits
 
     let(:headers) { Hash.new }
 
-    let(:zip_filepath) { File.join(Dir.mktmpdir, 'file.zip')}
-    let(:buildpack_guid) { SecureRandom.uuid }
+    let(:zip_filename) { 'file.zip' }
+
+    let(:zip_filepath) { File.join(Dir.mktmpdir, zip_filename)}
 
     let(:zip_file) do
       TestZip.create(zip_filepath, 1, 1024)
@@ -20,7 +21,9 @@ module Bits
 
     let(:zip_file_sha) { Digester.new.digest_path(zip_file) }
 
-    let(:upload_body) { { buildpack: zip_file } }
+    let(:buildpack_guid) { SecureRandom.uuid }
+
+    let(:upload_body) { { buildpack: zip_file, buildpack_name: zip_filename  } }
 
     let(:config) do
       {
@@ -62,6 +65,7 @@ module Bits
 
       it 'stores the uploaded file in the buildpack blobstore using the correct key' do
         allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+        allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
 
         blobstore = double(Bits::Blobstore::Client)
         expect_any_instance_of(Bits::BlobstoreFactory).to receive(:create_buildpack_blobstore).and_return(blobstore)
@@ -85,7 +89,11 @@ module Bits
       end
 
       it 'instantiates the upload params decorator with the right arguments' do
-        expect(UploadParams).to receive(:new).with(hash_including('buildpack'), use_nginx: false).once
+        expect(UploadParams).to receive(:new).with(hash_including(
+          'buildpack' => anything,
+          'buildpack_name' => zip_filename,
+        ), use_nginx: false).once
+
         put "/buildpacks/#{buildpack_guid}", upload_body, headers
       end
 
@@ -113,6 +121,23 @@ module Bits
         expect(File.exist?(zip_filepath)).to be_falsy
       end
 
+      context 'when the original filename is nil' do
+        before(:each) do
+          allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(nil)
+        end
+
+        it 'returns a corresponding error' do
+          expect(Bits::BlobstoreFactory).to_not receive(:new)
+
+          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+
+          expect(last_response.status).to eq(400)
+          json = MultiJson.load(last_response.body)
+          expect(json['code']).to eq(290002)
+          expect(json['description']).to match(/a filename must be specified/)
+        end
+      end
+
       context 'when no file is being uploaded' do
         before(:each) do
           allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(nil)
@@ -131,9 +156,10 @@ module Bits
       end
 
       context 'when a non-zip file is being uploaded' do
-        let(:upload_body) {{ buildpack: non_zip_file  }}
+        let(:upload_body) {{ buildpack: non_zip_file }}
 
         it 'returns a corresponding error' do
+          allow_any_instance_of(UploadParams).to receive(:original_filename).and_return('invalid.tar')
           put "/buildpacks/#{buildpack_guid}", upload_body, headers
 
           expect(last_response.status).to eql 400
@@ -145,6 +171,7 @@ module Bits
         it 'does not leave the temporary instance of the uploaded file around' do
           filepath = non_zip_file.tempfile.path
           allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(filepath)
+          allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
           put "/buildpacks/#{buildpack_guid}", upload_body, headers
           expect(File.exist?(filepath)).to be_falsy
         end
@@ -162,6 +189,7 @@ module Bits
 
         it 'does not leave the temporary instance of the uploaded file around' do
           allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+          allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
           put "/buildpacks/#{buildpack_guid}", upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
         end
@@ -179,6 +207,7 @@ module Bits
 
         it 'does not leave the temporary instance of the uploaded file around' do
           allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+          allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
           put "/buildpacks/#{buildpack_guid}", upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
         end
