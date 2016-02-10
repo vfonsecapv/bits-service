@@ -152,6 +152,11 @@ jobs:
     - get: git-cf-release
       trigger: true
     - get: git-bits-service-release
+      passed: [run-system-tests]
+      trigger: true
+  - put: cf-release-version
+    params:
+      file: cf-release-version/number
   - task: create-cf-release
     config:
       platform: linux
@@ -180,9 +185,6 @@ jobs:
     on_failure:
       put: cf-deployment-lock
       params: { release: cf-deployment-lock }
-  - put: cf-release-version
-    params:
-      file: cf-release-version/number
 - name: CATs
   serial: true
   plan:
