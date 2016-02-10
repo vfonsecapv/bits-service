@@ -7,7 +7,7 @@ module Bits
         Errors::ApiError.setup_i18n(Dir[File.expand_path('../../vendor/errors/i18n/*.yml', __FILE__)], :en)
       end
 
-      put '/buildpacks/:guid' do
+      put '/buildpacks/:guid' do | guid |
         config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).deep_symbolize_keys
 
         begin
@@ -20,7 +20,7 @@ module Bits
           raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
 
           sha = Digester.new.digest_path(uploaded_filepath)
-          destination_key = "#{params[:guid]}_#{sha}"
+          destination_key = "#{guid}_#{sha}"
 
           blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
           blobstore.cp_to_blobstore(uploaded_filepath, destination_key)
@@ -31,8 +31,26 @@ module Bits
         end
       end
 
+      get '/buildpacks/:guid' do | guid |
+        config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).deep_symbolize_keys
+
+        blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
+        blob = blobstore.blob(guid)
+        raise Errors::ApiError.new_from_details('NotFound', guid) unless blob
+
+        if blobstore.local?
+          if config[:nginx][:use_nginx]
+            return [200, { 'X-Accel-Redirect' => blob.download_url }, nil]
+          else
+            return send_file blob.local_path
+          end
+        else
+          return [302, { 'Location' => blob.download_url }, nil]
+        end
+      end
+
       error Errors::ApiError do |error|
-        halt 400, {description: error.message, code: error.code}.to_json
+        halt error.response_code, {description: error.message, code: error.code}.to_json
       end
     end
   end
