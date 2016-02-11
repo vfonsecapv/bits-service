@@ -70,15 +70,107 @@ module Bits
 
           expect(File.read(destination)).to eq('foobar barbaz')
         end
+
+        describe '#files_for' do
+          let(:prefix) { 'ab/cd/abcd' }
+
+          context 'when there are multiple files with different prefix' do
+            before(:each) do
+              upload_tmpfile(client, '123456')
+            end
+
+            it 'returns a single file' do
+              files = subject.files_for(prefix)
+              expect(files).to have_exactly(1).items
+              expect(files.first.key).to eq 'ab/cd/abcdef'
+            end
+          end
+
+
+          context 'when there are multiple files with the same prefix' do
+            before(:each) do
+              upload_tmpfile(client, 'abcdfoo')
+            end
+
+            it 'returns two file' do
+              files = subject.files_for(prefix)
+              expect(files).to have_exactly(2).items
+              expect(files.map { |f| f.key }).to contain_exactly('ab/cd/abcdef', 'ab/cd/abcdfoo')
+            end
+          end
+        end
       end
 
       context 'a local blobstore' do
+        let(:tmpdir) { Dir.mktmpdir }
+
         subject(:client) do
-          Client.new({ provider: 'Local' }, directory_key)
+          Client.new({ provider: 'Local', local_root: tmpdir }, directory_key)
         end
 
         it 'is true if the provider is local' do
           expect(client).to be_local
+        end
+
+        describe '#files_for' do
+          let(:prefix) { 'ab/cd/abcd' }
+
+          before(:each) do
+            upload_tmpfile(client, 'abcdef')
+          end
+
+          context 'when the prefix does not match any existing directory' do
+            let(:prefix) { 'non-existing' }
+
+            it 'returns an empty array' do
+              files = subject.files_for(prefix)
+              expect(files).to be_empty
+            end
+          end
+
+          context 'when there are multiple files with different filenames' do
+            before(:each) do
+              upload_tmpfile(client, '123456')
+            end
+
+            it 'returns the first file' do
+              files = subject.files_for(prefix)
+              expect(files).to have_exactly(1).items
+              expect(files.first.key).to eq 'abcdef'
+            end
+
+            context 'when the prefix is empty' do
+              let(:prefix) { nil }
+
+              it 'returns both files with their full path' do
+                files = subject.files_for(prefix)
+                expect(files).to have_exactly(2).items
+                expect(files.map { |f| f.key }).to contain_exactly('ab/cd/abcdef', '12/34/123456')
+              end
+            end
+          end
+
+          context 'when there are multiple files with the same prefix' do
+            before(:each) do
+              upload_tmpfile(client, 'abcdfoo')
+            end
+
+            it 'returns two file' do
+              files = subject.files_for(prefix)
+              expect(files).to have_exactly(2).items
+              expect(files.map { |f| f.key }).to contain_exactly('abcdef', 'abcdfoo')
+            end
+
+            context 'when the prefix is an existing directory path' do
+              let(:prefix) { 'ab/cd' }
+
+              it 'returns both files with their names only' do
+                files = subject.files_for(prefix)
+                expect(files).to have_exactly(2).items
+                expect(files.map { |f| f.key }).to contain_exactly('abcdef', 'abcdfoo')
+              end
+            end
+          end
         end
       end
 

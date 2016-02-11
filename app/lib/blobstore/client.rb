@@ -119,8 +119,17 @@ module Bits
 
       def files_for(prefix)
         if connection.is_a? Fog::Storage::Local::Real
-          directory = connection.directories.get(File.join(dir.key, prefix || ''))
-          directory ? directory.files : []
+          prefix = '' unless prefix
+          directory = connection.directories.get(File.join(dir.key, prefix))
+          return directory.files if directory && !directory.files.empty?
+
+          basename = File.basename(prefix)
+          dirname = File.dirname(prefix)
+
+          directory = connection.directories.get(File.join(dir.key, dirname))
+          return [] unless directory
+
+          directory.files.keep_if{ |f| f.key.start_with?(basename) }
         else
           connection.directories.get(dir.key, prefix: prefix).files
         end
