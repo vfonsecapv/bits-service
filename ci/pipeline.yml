@@ -137,8 +137,10 @@ jobs:
       - assets/bits-service-*.tgz
 - name: run-system-tests
   plan:
-    - get: git-bits-service-release
+    - get: bits-service-release-version
+      passed: [build-and-deploy]
       trigger: true
+    - get: git-bits-service-release
       passed: [build-and-deploy]
     - task: run-tests
       file: git-bits-service-release/ci/tasks/run-tests.yml
@@ -163,6 +165,9 @@ jobs:
   - aggregate:
     - put: cf-deployment-lock
       params: { acquire: true }
+    - get: bits-service-release-version
+      passed: [run-system-tests]
+      trigger: true
     - get: cf-release-version
       params:
         pre: dev
@@ -170,8 +175,6 @@ jobs:
     - get: git-cf-release
       trigger: true
     - get: git-bits-service-release
-      passed: [run-system-tests]
-      trigger: true
   - put: cf-release-version
     params:
       file: cf-release-version/number
