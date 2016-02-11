@@ -205,12 +205,13 @@ jobs:
 - name: CATs
   serial: true
   plan:
-  - get: cf-deployment-lock
-    passed: [create-and-deploy-CF]
-  - get: git-bits-service-release
-    trigger: true
-    passed:
-    - create-and-deploy-CF
+  - aggregate:
+    - get: cf-deployment-lock
+      trigger: true
+      passed: [create-and-deploy-CF]
+    - get: git-bits-service-release
+      passed:
+      - create-and-deploy-CF
   - task: run-cats
     config:
       platform: linux
@@ -233,6 +234,7 @@ jobs:
   plan:
   - aggregate:
     - get: cf-deployment-lock
+      trigger: true
       passed: [CATs]
     - get: git-bits-service-release
       trigger: true
@@ -262,12 +264,14 @@ jobs:
 - name: CATs-with-bits
   serial: true
   plan:
-  - get: cf-deployment-lock
-    passed: [turn-BITS-flag-ON]
-  - get: git-bits-service-release
-    trigger: true
-    passed:
-     - turn-BITS-flag-ON
+  - aggregate:
+    - get: cf-deployment-lock
+      trigger: true
+      passed: [turn-BITS-flag-ON]
+    - get: git-bits-service-release
+      trigger: true
+      passed:
+       - turn-BITS-flag-ON
   - task: run-cats
     config:
       platform: linux
