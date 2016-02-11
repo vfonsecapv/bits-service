@@ -35,7 +35,7 @@ module Bits
         config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).deep_symbolize_keys
 
         blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
-        blob = blobstore.blob(guid)
+        blob = blobstore.blobs_for_key_prefix(guid).first
         raise Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
         if blobstore.local?
