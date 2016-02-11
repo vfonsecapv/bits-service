@@ -1,15 +1,10 @@
 module Bits
   module Routes
-    class Buildpacks < Sinatra::Application
-      configure do
-        set :show_exceptions, :after_handler
-
-        Errors::ApiError.setup_i18n(Dir[File.expand_path('../../vendor/errors/i18n/*.yml', __FILE__)], :en)
-      end
+    class Buildpacks < Base
 
       put '/buildpacks/:guid' do | guid |
         begin
-          upload_params = UploadParams.new(params, use_nginx: use_nginx)
+          upload_params = UploadParams.new(params, use_nginx: use_nginx?)
 
           uploaded_filepath = upload_params.upload_filepath('buildpack')
           original_filename = upload_params.original_filename('buildpack')
@@ -35,7 +30,7 @@ module Bits
         raise Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
         if blobstore.local?
-          if use_nginx
+          if use_nginx?
             return [200, { 'X-Accel-Redirect' => blob.download_url }, nil]
           else
             return send_file blob.local_path
@@ -45,15 +40,6 @@ module Bits
         end
       end
 
-      error Errors::ApiError do |error|
-        halt error.response_code, {description: error.message, code: error.code}.to_json
-      end
-
-      private
-
-      def use_nginx
-        config[:nginx][:use_nginx]
-      end
     end
   end
 end
