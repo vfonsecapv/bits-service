@@ -1,5 +1,5 @@
 #!/bin/bash -ex
 
-cd git-bits-service
+cd $(dirname $0)../../
 
 bundle install && bundle exec rake spec:all
