@@ -10,6 +10,8 @@ Dir[File.expand_path('../app/**/*.rb', __FILE__)].each do |file|
   require file
 end
 
+helpers Bits::Helpers::Config
+
 module Bits
   class App < Sinatra::Application
     use Routes::Buildpacks
