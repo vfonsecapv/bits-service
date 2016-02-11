@@ -8,10 +8,8 @@ module Bits
       end
 
       put '/buildpacks/:guid' do | guid |
-        config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).deep_symbolize_keys
-
         begin
-          upload_params = UploadParams.new(params, use_nginx: config[:nginx][:use_nginx])
+          upload_params = UploadParams.new(params, use_nginx: use_nginx)
 
           uploaded_filepath = upload_params.upload_filepath('buildpack')
           original_filename = upload_params.original_filename('buildpack')
@@ -32,14 +30,12 @@ module Bits
       end
 
       get '/buildpacks/:guid' do | guid |
-        config = YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).deep_symbolize_keys
-
         blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
         blob = blobstore.blobs_for_key_prefix(guid).first
         raise Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
         if blobstore.local?
-          if config[:nginx][:use_nginx]
+          if use_nginx
             return [200, { 'X-Accel-Redirect' => blob.download_url }, nil]
           else
             return send_file blob.local_path
@@ -51,6 +47,16 @@ module Bits
 
       error Errors::ApiError do |error|
         halt error.response_code, {description: error.message, code: error.code}.to_json
+      end
+
+      private
+
+      def config
+        @config ||= YAML.load_file(ENV.fetch('BITS_CONFIG_FILE')).deep_symbolize_keys
+      end
+
+      def use_nginx
+        config[:nginx][:use_nginx]
       end
     end
   end
