@@ -1,0 +1,7 @@
+buildpacks:
+  buildpack_directory_key: 'buildpacks'
+  fog_connection:
+    provider: 'local'
+    local_root: '/tmp/'
+nginx:
+  use_nginx: false

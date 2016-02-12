@@ -10,6 +10,9 @@ Dir[File.expand_path('../app/**/*.rb', __FILE__)].each do |file|
   require file
 end
 
+require_relative 'config/environment'
+
+Bits::Environment.init
 helpers Bits::Helpers::Config
 
 module Bits

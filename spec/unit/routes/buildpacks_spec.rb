@@ -47,14 +47,13 @@ module Bits
 
     around(:each) do |example|
       config_filepath = create_config_file(config)
-      ENV['BITS_CONFIG_FILE'] = config_filepath
+      Bits::Environment.load_configuration(config_filepath)
       Fog.mock!
 
       example.run
 
       Fog.unmock!
       FileUtils.rm_f(config_filepath)
-      ENV.delete('BITS_CONFIG_FILE')
     end
 
     after(:each) do
@@ -215,17 +214,6 @@ module Bits
           allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
           put "/buildpacks/#{buildpack_guid}", upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
-        end
-      end
-
-      context 'when environment variable BITS_CONFIG_FILE is not set' do
-        before(:each) do
-          ENV.delete('BITS_CONFIG_FILE')
-        end
-
-        it 'return HTTP status 500' do
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
-          expect(last_response.status).to eq(500)
         end
       end
     end

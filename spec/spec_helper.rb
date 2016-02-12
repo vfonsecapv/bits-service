@@ -1,3 +1,4 @@
+ENV['BITS_CONFIG_FILE'] = './spec/fixtures/sample_config.yml' unless ENV.key?('BITS_CONFIG_FILE')
 require_relative '../app'
 
 require 'rspec'
