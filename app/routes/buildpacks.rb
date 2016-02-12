@@ -38,6 +38,13 @@ module Bits
           return [302, { 'Location' => blob.download_url }, nil]
         end
       end
+
+      delete '/buildpacks/:guid' do |guid|
+        blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
+        blob = blobstore.blobs_for_key_prefix(guid).first
+        fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
+        blobstore.delete_blob(blob)
+      end
     end
   end
 end

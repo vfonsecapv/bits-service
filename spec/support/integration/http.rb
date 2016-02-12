@@ -16,4 +16,10 @@ module IntegrationHttp
   rescue => e
     e.response
   end
+
+  def make_delete_request(path)
+    RestClient.delete "#{endpoint}#{path}"
+  rescue => e
+    e.response
+  end
 end

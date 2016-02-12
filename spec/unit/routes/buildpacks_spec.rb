@@ -223,7 +223,7 @@ module Bits
       let(:blobs) { [blob] }
 
       let(:blob) do
-        blob = double(Bits::Blobstore::Blob)
+        blob = double(Bits::Blobstore::Blob, download_url: download_url)
         allow(blob).to receive(:download_url).and_return(download_url)
         blob
       end
@@ -342,6 +342,44 @@ module Bits
 
         it 'returns a corresponding error' do
           get "/buildpacks/#{buildpack_guid}", headers
+
+          expect(last_response.status).to eq(404)
+          json = MultiJson.load(last_response.body)
+          expect(json['code']).to eq(10_000)
+          expect(json['description']).to match(/Unknown request/)
+        end
+      end
+    end
+
+    describe 'DELETE /buildpacks/:guid' do
+      let(:blobs) { [blob] }
+      let(:blob) do
+        double(Bits::Blobstore::Blob)
+      end
+      let(:blobstore) do
+        double(Bits::Blobstore::Client, blobs_for_key_prefix: blobs)
+      end
+
+      before(:each) do
+        allow_any_instance_of(Bits::BlobstoreFactory).to receive(:create_buildpack_blobstore).and_return(blobstore)
+        allow(blobstore).to receive(:delete_blob).and_return(true)
+      end
+
+      it 'returns HTTP status code 200' do
+        delete "/buildpacks/#{buildpack_guid}", headers
+        expect(last_response.status).to eq(200)
+      end
+
+      it 'deletes the blob using the blobstore client' do
+        expect(blobstore).to receive(:delete_blob).with(blob)
+        delete "/buildpacks/#{buildpack_guid}", headers
+      end
+
+      context 'when the buildpack does not exist' do
+        let(:blob) { nil }
+
+        it 'returns a corresponding error' do
+          delete "/buildpacks/#{buildpack_guid}", headers
 
           expect(last_response.status).to eq(404)
           json = MultiJson.load(last_response.body)
