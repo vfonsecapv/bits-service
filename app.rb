@@ -15,6 +15,8 @@ require_relative 'config/environment'
 Bits::Environment.init
 helpers Bits::Helpers::Config
 
+set :dump_errors, false if ENV['RACK_ENV'] == 'production'
+
 module Bits
   class App < Sinatra::Application
     use Routes::Buildpacks

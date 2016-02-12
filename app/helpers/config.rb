@@ -7,6 +7,10 @@ module Bits
         Bits::Environment.config
       end
 
+      def logger
+        Bits::Environment.logger
+      end
+
       def use_nginx?
         config[:nginx][:use_nginx]
       end
