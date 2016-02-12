@@ -20,3 +20,13 @@ RUN gem install bundler --no-rdoc --no-ri && \
 
 RUN wget https://github.com/cloudfoundry-incubator/spiff/releases/download/v1.0.7/spiff_linux_amd64.zip && \
     unzip spiff_linux_amd64.zip && mv spiff /usr/local/bin/ && rm spiff_linux_amd64.zip
+
+RUN gem install --no-rdoc --no-ri \
+        unf_ext:0.0.7.2 \
+        msgpack:0.5.9 \
+        yajl-ruby:1.2.1 \
+        posix-spawn:0.3.9 \
+        puma:2.16.0 \
+        nokogiri:1.6.7.1 \
+        fog:1.34.0
+
