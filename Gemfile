@@ -19,6 +19,7 @@ group :development do
   gem 'timecop'
   gem 'webmock'
   gem 'rest-client'
+  gem 'rubocop'
 
   gem 'pry'
   gem 'pry-nav'
