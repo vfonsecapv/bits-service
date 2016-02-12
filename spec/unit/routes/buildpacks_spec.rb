@@ -61,15 +61,17 @@ module Bits
     end
 
     describe 'PUT /buildpacks/:guid' do
+      before do
+        allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+        allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
+      end
+
       it 'returns HTTP status 201' do
         put "/buildpacks/#{buildpack_guid}", upload_body, headers
         expect(last_response.status).to eq(201)
       end
 
       it 'stores the uploaded file in the buildpack blobstore using the correct key' do
-        allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
-        allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
-
         blobstore = double(Bits::Blobstore::Client)
         expect_any_instance_of(Bits::BlobstoreFactory).to receive(:create_buildpack_blobstore).and_return(blobstore)
 
@@ -223,15 +225,13 @@ module Bits
       let(:blobs) { [blob] }
 
       let(:blob) do
-        blob = double(Bits::Blobstore::Blob, download_url: download_url)
-        allow(blob).to receive(:download_url).and_return(download_url)
-        blob
+        double(Bits::Blobstore::Blob, download_url: download_url)
       end
 
       let(:blobstore) do
-        blobstore = double(Bits::Blobstore::Client)
-        allow(blobstore).to receive(:blobs_for_key_prefix).with(buildpack_guid).and_return(blobs)
-        blobstore
+        double(Bits::Blobstore::Client).tap do |blobstore|
+          allow(blobstore).to receive(:blobs_for_key_prefix).with(buildpack_guid).and_return(blobs)
+        end
       end
 
       before(:each) do
