@@ -5,8 +5,8 @@ module Bits
         load_configuration(ENV.fetch('BITS_CONFIG_FILE'))
         initialize_logger
       rescue KeyError => e
-        puts "Missing configuration file."
-        puts "Please set BITS_CONFIG_FILE to point to a valid configuraiton file."
+        puts 'Missing configuration file.'
+        puts 'Please set BITS_CONFIG_FILE to point to a valid configuraiton file.'
         raise e
       end
 
@@ -21,7 +21,7 @@ module Bits
       def initialize_logger
         config = Steno::Config.from_hash(@config[:logging])
         Steno.init(config)
-        @logger = Steno.logger("bits")
+        @logger = Steno.logger('bits')
       end
     end
   end

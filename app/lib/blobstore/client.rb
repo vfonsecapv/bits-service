@@ -66,7 +66,7 @@ module Bits
               key: partitioned_key(destination_key),
               body: file,
               content_type: mime_type || 'application/zip',
-              public: local?,
+              public: local?
             )
           # work around https://github.com/fog/fog/issues/3137
           # and Fog raising an EOFError SocketError intermittently
@@ -88,13 +88,13 @@ module Bits
         logger.info(log_entry,
                     destination_key: destination_key,
                     duration_seconds: duration,
-                    size: size,
+                    size: size
                    )
       end
 
       def cp_file_between_keys(source_key, destination_key)
         source_file = file(source_key)
-        raise FileNotFound if source_file.nil?
+        fail FileNotFound if source_file.nil?
         source_file.copy(@directory_key, partitioned_key(destination_key))
 
         dest_file = file(destination_key)
@@ -129,7 +129,7 @@ module Bits
           directory = connection.directories.get(File.join(dir.key, dirname))
           return [] unless directory
 
-          directory.files.keep_if{ |f| f.key.start_with?(basename) }
+          directory.files.keep_if { |f| f.key.start_with?(basename) }
         else
           connection.directories.get(dir.key, prefix: prefix).files
         end
@@ -156,7 +156,7 @@ module Bits
 
       def blobs_for_key_prefix(prefix)
         prefix = partitioned_key(prefix)
-        files_for(prefix).collect{|f| Blob.new(f, @cdn)}
+        files_for(prefix).collect { |f| Blob.new(f, @cdn) }
       end
 
       # Deprecated should not allow to access underlying files
@@ -213,7 +213,7 @@ module Bits
       end
 
       def dir
-        @dir ||= directory.get_or_create
+        @dir ||= directory.fetch!
       end
 
       def directory

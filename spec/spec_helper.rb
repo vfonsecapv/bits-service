@@ -30,4 +30,3 @@ end
 def app
   Bits::App
 end
-

@@ -74,7 +74,7 @@ module Bits
         end
 
         it 'returns attributes for a set of keys' do
-          expect(blob.attributes('c')).to eq({ 'c' => 'd' })
+          expect(blob.attributes('c')).to eq('c' => 'd')
         end
       end
     end

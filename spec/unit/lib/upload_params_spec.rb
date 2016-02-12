@@ -25,7 +25,6 @@ module Bits
     end
 
     describe '#upload_filepath' do
-
       context 'Nginx mode' do
         subject { UploadParams.new(params, use_nginx: true) }
 

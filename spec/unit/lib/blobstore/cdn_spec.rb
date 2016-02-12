@@ -20,9 +20,9 @@ module Bits
 
       describe '.new' do
         it 'is private' do
-          expect {
+          expect do
             Cdn.new('foo')
-          }.to raise_error(/private method/)
+          end.to raise_error(/private method/)
         end
       end
 
@@ -36,9 +36,9 @@ module Bits
           end
 
           it 'yields' do
-            expect { |yielded|
+            expect do |yielded|
               cdn.get(path_location, &yielded)
-            }.to yield_control
+            end.to yield_control
           end
 
           it 'downloads the file' do

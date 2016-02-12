@@ -7,7 +7,7 @@ module Bits
         let(:config) { nil }
 
         it 'throws an exception' do
-          expect{BlobstoreFactory.new(config)}.to raise_error 'Missing config'
+          expect { BlobstoreFactory.new(config) }.to raise_error 'Missing config'
         end
       end
 
@@ -15,26 +15,28 @@ module Bits
         let(:config) { Hash.new }
 
         it 'throws an exception' do
-          expect{BlobstoreFactory.new(config)}.to raise_error 'Missing :buildpacks config'
+          expect { BlobstoreFactory.new(config) }.to raise_error 'Missing :buildpacks config'
         end
       end
 
       context 'when config is missing the :fog_connection key' do
-        let(:config) { {buildpacks: {}} }
+        let(:config) { { buildpacks: {} } }
 
         it 'throws an exception' do
-          expect{BlobstoreFactory.new(config)}.to raise_error 'Missing :fog_connection config'
+          expect { BlobstoreFactory.new(config) }.to raise_error 'Missing :fog_connection config'
         end
       end
     end
 
     describe '#create_buildpack_blobstore' do
-      let(:config) { {
-        :buildpacks => {
-          :fog_connection => 'fog_connection',
-          :buildpack_directory_key => 'directory_key'
+      let(:config) do
+        {
+          buildpacks: {
+            fog_connection: 'fog_connection',
+            buildpack_directory_key: 'directory_key'
+          }
         }
-      } }
+      end
 
       subject { BlobstoreFactory.new(config) }
 
@@ -48,11 +50,13 @@ module Bits
       end
 
       context 'when :buildpack_directory_key is not present in config' do
-        let(:config) { {
-          :buildpacks => {
-            :fog_connection => 'fog_connection'
+        let(:config) do
+          {
+            buildpacks: {
+              fog_connection: 'fog_connection'
+            }
           }
-        } }
+        end
 
         it 'creates a blobstore client with the correct default directory key' do
           expect(Blobstore::Client).to receive(:new).with('fog_connection', 'cc-buildpacks')

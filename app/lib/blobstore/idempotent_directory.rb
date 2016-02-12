@@ -5,7 +5,7 @@ module Bits
         @directory = directory
       end
 
-      def get_or_create
+      def fetch!
         @directory.get || @directory.create
       end
     end

@@ -1,16 +1,15 @@
 module Bits
   module Routes
     class Buildpacks < Base
-
-      put '/buildpacks/:guid' do | guid |
+      put '/buildpacks/:guid' do |guid|
         begin
           upload_params = UploadParams.new(params, use_nginx: use_nginx?)
 
           uploaded_filepath = upload_params.upload_filepath('buildpack')
           original_filename = upload_params.original_filename('buildpack')
-          raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a filename must be specified') if original_filename.to_s == ''
-          raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'only zip files allowed') unless File.extname(original_filename) == '.zip'
-          raise Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
+          fail Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a filename must be specified') if original_filename.to_s == ''
+          fail Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'only zip files allowed') unless File.extname(original_filename) == '.zip'
+          fail Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
 
           sha = Digester.new.digest_path(uploaded_filepath)
           destination_key = "#{guid}_#{sha}"
@@ -24,10 +23,10 @@ module Bits
         end
       end
 
-      get '/buildpacks/:guid' do | guid |
+      get '/buildpacks/:guid' do |guid|
         blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
         blob = blobstore.blobs_for_key_prefix(guid).first
-        raise Errors::ApiError.new_from_details('NotFound', guid) unless blob
+        fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
         if blobstore.local?
           if use_nginx?
@@ -39,7 +38,6 @@ module Bits
           return [302, { 'Location' => blob.download_url }, nil]
         end
       end
-
     end
   end
 end

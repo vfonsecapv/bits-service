@@ -11,7 +11,6 @@ module TestZip
     end
 
     child = POSIX::Spawn::Child.new('zip', zip_name, *files.map(&:path))
-    child.status.exitstatus == 0 || raise("Failed zipping:\n#{child.err}\n#{child.out}")
+    child.status.exitstatus == 0 || fail("Failed zipping:\n#{child.err}\n#{child.out}")
   end
 end
-

@@ -1,5 +1,5 @@
 module IntegrationSetup
-  def start_server(config = {})
+  def start_server(config={})
     @config_filepath = create_config_file(config)
     @pid = run_cmd("RACK_ENV=production BITS_CONFIG_FILE=#{@config_filepath} rackup")
     sleep 2
@@ -19,14 +19,14 @@ module IntegrationSetupHelpers
     spawn_opts = {
       chdir: project_path,
       out: '/dev/null',
-      err: '/dev/null',
+      err: '/dev/null'
     }
 
     pid = Process.spawn(opts[:env], cmd, spawn_opts)
 
     if opts[:wait]
       Process.wait(pid)
-      raise "`#{cmd}` exited with #{$CHILD_STATUS}" unless $CHILD_STATUS.success?
+      fail "`#{cmd}` exited with #{$CHILD_STATUS}" unless $CHILD_STATUS.success?
     end
 
     pid

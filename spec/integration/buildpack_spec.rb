@@ -9,12 +9,12 @@ describe 'buildpacks resource', type: :integration do
         buildpack_directory_key: 'directory-key',
         fog_connection: {
           provider: 'local',
-          local_root: @root_dir,
-        },
+          local_root: @root_dir
+        }
       },
       nginx: {
-        use_nginx: false,
-      },
+        use_nginx: false
+      }
     }
 
     start_server(config)
@@ -31,7 +31,7 @@ describe 'buildpacks resource', type: :integration do
 
   let(:guid) { SecureRandom.uuid }
 
-  let(:zip_filepath) { File.join(Dir.mktmpdir, 'file.zip')}
+  let(:zip_filepath) { File.join(Dir.mktmpdir, 'file.zip') }
 
   let(:zip_file) do
     TestZip.create(zip_filepath, 1, 1024)
@@ -57,7 +57,7 @@ describe 'buildpacks resource', type: :integration do
         'directory-key',
         blobstore_key[0..1],
         blobstore_key[2..3],
-        blobstore_key,
+        blobstore_key
       )
 
       make_put_request(request_path, upload_body)

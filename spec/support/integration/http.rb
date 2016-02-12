@@ -6,18 +6,14 @@ module IntegrationHttp
   end
 
   def make_get_request(path)
-    begin
-      RestClient.get "#{endpoint}#{path}"
-    rescue => e
-      e.response
-    end
+    RestClient.get "#{endpoint}#{path}"
+  rescue => e
+    e.response
   end
 
   def make_put_request(path, body)
-    begin
-      RestClient.put "#{endpoint}#{path}", body
-    rescue => e
-      e.response
-    end
+    RestClient.put "#{endpoint}#{path}", body
+  rescue => e
+    e.response
   end
 end

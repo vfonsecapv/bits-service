@@ -12,7 +12,7 @@ module Bits
         {
           provider: 'AWS',
           aws_access_key_id: 'fake_access_key_id',
-          aws_secret_access_key: 'fake_secret_access_key',
+          aws_secret_access_key: 'fake_secret_access_key'
         }
       end
       let(:min_size) { 20 }
@@ -64,9 +64,9 @@ module Bits
 
           destination = File.join(local_dir, 'some_directory_to_place_file', 'downloaded_file')
 
-          expect { client.download_from_blobstore(key, destination) }.to change {
-            File.exist?(destination)
-          }.from(false).to(true)
+          expect { client.download_from_blobstore(key, destination) }.
+            to change { File.exist?(destination) }.
+            from(false).to(true)
 
           expect(File.read(destination)).to eq('foobar barbaz')
         end
@@ -86,7 +86,6 @@ module Bits
             end
           end
 
-
           context 'when there are multiple files with the same prefix' do
             before(:each) do
               upload_tmpfile(client, 'abcdfoo')
@@ -95,7 +94,7 @@ module Bits
             it 'returns two file' do
               files = subject.files_for(prefix)
               expect(files).to have_exactly(2).items
-              expect(files.map { |f| f.key }).to contain_exactly('ab/cd/abcdef', 'ab/cd/abcdfoo')
+              expect(files.map(&:key)).to contain_exactly('ab/cd/abcdef', 'ab/cd/abcdfoo')
             end
           end
         end
@@ -145,7 +144,7 @@ module Bits
               it 'returns both files with their full path' do
                 files = subject.files_for(prefix)
                 expect(files).to have_exactly(2).items
-                expect(files.map { |f| f.key }).to contain_exactly('ab/cd/abcdef', '12/34/123456')
+                expect(files.map(&:key)).to contain_exactly('ab/cd/abcdef', '12/34/123456')
               end
             end
           end
@@ -158,7 +157,7 @@ module Bits
             it 'returns two file' do
               files = subject.files_for(prefix)
               expect(files).to have_exactly(2).items
-              expect(files.map { |f| f.key }).to contain_exactly('abcdef', 'abcdfoo')
+              expect(files.map(&:key)).to contain_exactly('abcdef', 'abcdfoo')
             end
 
             context 'when the prefix is an existing directory path' do
@@ -167,7 +166,7 @@ module Bits
               it 'returns both files with their names only' do
                 files = subject.files_for(prefix)
                 expect(files).to have_exactly(2).items
-                expect(files.map { |f| f.key }).to contain_exactly('abcdef', 'abcdfoo')
+                expect(files.map(&:key)).to contain_exactly('abcdef', 'abcdfoo')
               end
             end
           end
@@ -186,8 +185,8 @@ module Bits
         end
 
         describe '#blobs_for_key_prefix' do
-          let (:prefix) { 'some-prefix' }
-          let (:files) { ['file1', 'file2'] }
+          let(:prefix) { 'some-prefix' }
+          let(:files) { %w(file1 file2) }
 
           before(:each) do
             allow(subject).to receive(:files_for).and_return(files)
@@ -202,7 +201,7 @@ module Bits
 
           it 'wraps the expected blobs' do
             blobs = subject.blobs_for_key_prefix(prefix)
-            expect(blobs.collect{|b| b.file}).to eq files
+            expect(blobs.collect(&:file)).to eq files
           end
         end
 
@@ -344,9 +343,9 @@ module Bits
               expect(client.exists?(sha_of_content)).to be true
               destination = File.join(local_dir, 'some_directory_to_place_file', 'downloaded_file')
 
-              expect { client.download_from_blobstore(sha_of_content, destination) }.to change {
-                File.exist?(destination)
-              }.from(false).to(true)
+              expect { client.download_from_blobstore(sha_of_content, destination) }.
+                to change { File.exist?(destination) }.
+                from(false).to(true)
 
               expect(File.read(destination)).to eq(content)
             end
@@ -470,7 +469,7 @@ module Bits
                 called = 0
                 expect(client.files).to receive(:create).exactly(3).times do |_|
                   called += 1
-                  raise Excon::Errors::SocketError.new(EOFError.new) if called <= 2
+                  fail Excon::Errors::SocketError.new(EOFError.new) if called <= 2
                 end
 
                 path = File.join(local_dir, 'some_file')
@@ -508,7 +507,7 @@ module Bits
                 called = 0
                 expect(client.files).to receive(:create).exactly(3).times do |_|
                   called += 1
-                  raise Excon::Errors::BadRequest.new('a bad request') if called <= 2
+                  fail Excon::Errors::BadRequest.new('a bad request') if called <= 2
                 end
 
                 path = File.join(local_dir, 'some_file')
@@ -547,7 +546,7 @@ module Bits
                   called = 0
                   expect(client.files).to receive(:create).exactly(3).times do |_|
                     called += 1
-                    raise SystemCallError.new('o no') if called <= 2
+                    fail SystemCallError.new('o no') if called <= 2
                   end
 
                   path = File.join(local_dir, 'some_file')
@@ -625,9 +624,8 @@ module Bits
 
           context 'when the source key has no file associated with it' do
             it 'does not attempt to copy over to the destination key' do
-              expect {
-                client.cp_file_between_keys(src_key, dest_key)
-              }.to raise_error(Bits::Blobstore::Client::FileNotFound)
+              expect { client.cp_file_between_keys(src_key, dest_key) }.
+                to raise_error(Bits::Blobstore::Client::FileNotFound)
 
               expect(client.files).to have(0).items
             end
@@ -664,9 +662,7 @@ module Bits
 
           it 'should be ok if there are no files' do
             expect(client.files).to have(0).items
-            expect {
-              client.delete_all
-            }.to_not raise_error
+            expect { client.delete_all }.to_not raise_error
           end
 
           context 'when the underlying blobstore allows multiple deletes in a single request' do
@@ -674,16 +670,14 @@ module Bits
               {
                 provider: 'AWS',
                 aws_access_key_id: 'fake_access_key_id',
-                aws_secret_access_key: 'fake_secret_access_key',
+                aws_secret_access_key: 'fake_secret_access_key'
               }
             end
 
             it 'should be ok if there are no files' do
               Fog.mock!
               expect(client.files).to have(0).items
-              expect {
-                client.delete_all
-              }.to_not raise_error
+              expect { client.delete_all }.to_not raise_error
             end
 
             it 'deletes in groups of the page_size' do
@@ -771,9 +765,8 @@ module Bits
 
           it 'should be ok if there are no files' do
             expect(client.files).to have(0).items
-            expect {
-              client.delete_all_in_path('nonsense_path')
-            }.to_not raise_error
+            expect { client.delete_all_in_path('nonsense_path') }.
+              to_not raise_error
           end
 
           context 'when the underlying blobstore allows multiple deletes in a single request' do
@@ -781,16 +774,15 @@ module Bits
               {
                 provider: 'AWS',
                 aws_access_key_id: 'fake_access_key_id',
-                aws_secret_access_key: 'fake_secret_access_key',
+                aws_secret_access_key: 'fake_secret_access_key'
               }
             end
 
             it 'should be ok if there are no files' do
               Fog.mock!
               expect(client.files).to have(0).items
-              expect {
-                client.delete_all_in_path('path!')
-              }.to_not raise_error
+              expect { client.delete_all_in_path('path!') }.
+                to_not raise_error
             end
           end
 
@@ -840,9 +832,8 @@ module Bits
 
           it "should be ok if the file doesn't exist" do
             expect(client.files).to have(0).items
-            expect {
-              client.delete('non-existent-file')
-            }.to_not raise_error
+            expect { client.delete('non-existent-file') }.
+              to_not raise_error
           end
         end
 
@@ -862,9 +853,7 @@ module Bits
 
           it "should be ok if the file doesn't exist" do
             blob = ::Bits::Blobstore::Blob.new(nil, nil)
-            expect {
-              client.delete_blob(blob)
-            }.to_not raise_error
+            expect { client.delete_blob(blob) }.to_not raise_error
           end
         end
       end

@@ -3,7 +3,6 @@ require 'securerandom'
 
 module Bits
   describe Routes::Buildpacks do
-
     let(:headers) { Hash.new }
 
     let(:zip_filename) { 'file.zip' }
@@ -36,12 +35,12 @@ module Bits
           fog_connection: {
             provider: 'AWS',
             aws_access_key_id: 'fake_aws_key_id',
-            aws_secret_access_key: 'fake_secret_access_key',
-          },
+            aws_secret_access_key: 'fake_secret_access_key'
+          }
         },
         nginx: {
-          use_nginx: use_nginx,
-        },
+          use_nginx: use_nginx
+        }
       }
     end
 
@@ -94,8 +93,8 @@ module Bits
 
       it 'instantiates the upload params decorator with the right arguments' do
         expect(UploadParams).to receive(:new).with(hash_including(
-          'buildpack' => anything,
-          'buildpack_name' => zip_filename,
+                                                     'buildpack' => anything,
+                                                     'buildpack_name' => zip_filename
         ), use_nginx: false).once
 
         put "/buildpacks/#{buildpack_guid}", upload_body, headers
@@ -137,7 +136,7 @@ module Bits
 
           expect(last_response.status).to eq(400)
           json = MultiJson.load(last_response.body)
-          expect(json['code']).to eq(290002)
+          expect(json['code']).to eq(290_002)
           expect(json['description']).to match(/a filename must be specified/)
         end
       end
@@ -154,13 +153,13 @@ module Bits
 
           expect(last_response.status).to eq(400)
           json = MultiJson.load(last_response.body)
-          expect(json['code']).to eq(290002)
+          expect(json['code']).to eq(290_002)
           expect(json['description']).to match(/a file must be provided/)
         end
       end
 
       context 'when a non-zip file is being uploaded' do
-        let(:upload_body) {{ buildpack: non_zip_file }}
+        let(:upload_body) { { buildpack: non_zip_file } }
 
         it 'returns a corresponding error' do
           allow_any_instance_of(UploadParams).to receive(:original_filename).and_return('invalid.tar')
@@ -168,7 +167,7 @@ module Bits
 
           expect(last_response.status).to eql 400
           json = MultiJson.load(last_response.body)
-          expect(json['code']).to eq(290002)
+          expect(json['code']).to eq(290_002)
           expect(json['description']).to match(/only zip files allowed/)
         end
 
@@ -221,7 +220,7 @@ module Bits
     describe 'GET /buildpacks/:guid' do
       let(:download_url) { 'some-url' }
 
-      let(:blobs) { [ blob ] }
+      let(:blobs) { [blob] }
 
       let(:blob) do
         blob = double(Bits::Blobstore::Blob)
@@ -346,7 +345,7 @@ module Bits
 
           expect(last_response.status).to eq(404)
           json = MultiJson.load(last_response.body)
-          expect(json['code']).to eq(10000)
+          expect(json['code']).to eq(10_000)
           expect(json['description']).to match(/Unknown request/)
         end
       end
