@@ -25,7 +25,7 @@ module Bits
 
     let(:buildpack_guid) { SecureRandom.uuid }
 
-    let(:upload_body) { { buildpack: zip_file, buildpack_name: zip_filename  } }
+    let(:upload_body) { { buildpack: zip_file, buildpack_name: zip_filename, guid: buildpack_guid  } }
 
     let(:use_nginx) { false }
 
@@ -60,14 +60,14 @@ module Bits
       FileUtils.rm_f(non_zip_file.tempfile.path)
     end
 
-    describe 'PUT /buildpacks/:guid' do
+    describe 'POST /buildpacks' do
       before do
         allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
         allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
       end
 
       it 'returns HTTP status 201' do
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
         expect(last_response.status).to eq(201)
       end
 
@@ -78,19 +78,19 @@ module Bits
         expected_key = "#{buildpack_guid}_#{zip_file_sha}"
         expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, expected_key)
 
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
       end
 
       it 'instantiates the blobstore factory with the right config' do
         expect(Bits::BlobstoreFactory).to receive(:new).with(hash_including(:buildpacks)).once
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
       end
 
       it 'uses the blobstore factory to create a buildpack blobstore' do
         blobstore_factory = double(Bits::BlobstoreFactory)
         allow(Bits::BlobstoreFactory).to receive(:new).and_return(blobstore_factory)
         expect(blobstore_factory).to receive(:create_buildpack_blobstore).once
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
       end
 
       it 'instantiates the upload params decorator with the right arguments' do
@@ -99,30 +99,30 @@ module Bits
                                                      'buildpack_name' => zip_filename
         ), use_nginx: false).once
 
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
       end
 
       it 'gets the uploaded filepath from the upload params decorator' do
         decorator = double(UploadParams)
         allow(UploadParams).to receive(:new).and_return(decorator)
         expect(decorator).to receive(:upload_filepath).with('buildpack').once
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
       end
 
       it 'uses the default digester' do
         expect(Digester).to receive(:new).with(no_args).once
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
       end
 
       it 'gets the sha of the uploaded file from the digester' do
         allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
         expect_any_instance_of(Digester).to receive(:digest_path).with(zip_filepath).once
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
       end
 
       it 'does not leave the temporary instance of the uploaded file around' do
         allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
-        put "/buildpacks/#{buildpack_guid}", upload_body, headers
+        post '/buildpacks', upload_body, headers
         expect(File.exist?(zip_filepath)).to be_falsy
       end
 
@@ -134,7 +134,7 @@ module Bits
         it 'returns a corresponding error' do
           expect(Bits::BlobstoreFactory).to_not receive(:new)
 
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          post '/buildpacks', upload_body, headers
 
           expect(last_response.status).to eq(400)
           json = MultiJson.load(last_response.body)
@@ -151,7 +151,7 @@ module Bits
         it 'returns a corresponding error' do
           expect(Bits::BlobstoreFactory).to_not receive(:new)
 
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          post '/buildpacks', upload_body, headers
 
           expect(last_response.status).to eq(400)
           json = MultiJson.load(last_response.body)
@@ -161,11 +161,11 @@ module Bits
       end
 
       context 'when a non-zip file is being uploaded' do
-        let(:upload_body) { { buildpack: non_zip_file } }
+        let(:upload_body) { { buildpack: non_zip_file, guid: buildpack_guid } }
 
         it 'returns a corresponding error' do
           allow_any_instance_of(UploadParams).to receive(:original_filename).and_return('invalid.tar')
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          post '/buildpacks', upload_body, headers
 
           expect(last_response.status).to eql 400
           json = MultiJson.load(last_response.body)
@@ -177,7 +177,7 @@ module Bits
           filepath = non_zip_file.tempfile.path
           allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(filepath)
           allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          post '/buildpacks', upload_body, headers
           expect(File.exist?(filepath)).to be_falsy
         end
       end
@@ -188,14 +188,14 @@ module Bits
         end
 
         it 'return HTTP status 500' do
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          post '/buildpacks', upload_body, headers
           expect(last_response.status).to eq(500)
         end
 
         it 'does not leave the temporary instance of the uploaded file around' do
           allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
           allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          post '/buildpacks', upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
         end
       end
@@ -206,14 +206,14 @@ module Bits
         end
 
         it 'return HTTP status 500' do
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          post '/buildpacks', upload_body, headers
           expect(last_response.status).to eq(500)
         end
 
         it 'does not leave the temporary instance of the uploaded file around' do
           allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
           allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
-          put "/buildpacks/#{buildpack_guid}", upload_body, headers
+          post '/buildpacks', upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
         end
       end

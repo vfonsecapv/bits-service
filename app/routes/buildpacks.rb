@@ -1,8 +1,9 @@
 module Bits
   module Routes
     class Buildpacks < Base
-      put '/buildpacks/:guid' do |guid|
+      post '/buildpacks' do
         begin
+          guid = params[:guid]
           upload_params = UploadParams.new(params, use_nginx: use_nginx?)
 
           uploaded_filepath = upload_params.upload_filepath('buildpack')
