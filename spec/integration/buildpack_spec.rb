@@ -29,8 +29,6 @@ describe 'buildpacks resource', type: :integration do
     FileUtils.rm_rf(File.dirname(zip_filepath))
   end
 
-  let(:guid) { SecureRandom.uuid }
-
   let(:zip_filepath) { File.join(Dir.mktmpdir, 'file.zip') }
 
   let(:zip_file) do
@@ -39,20 +37,27 @@ describe 'buildpacks resource', type: :integration do
   end
 
   let(:collection_path) { '/buildpacks' }
-  let(:resource_path) { "/buildpacks/#{guid}" }
 
-  let(:upload_body) { { buildpack: zip_file, buildpack_name: 'original.zip', guid: guid } }
+  let(:upload_body) { { buildpack: zip_file, buildpack_name: 'original.zip' } }
 
   let(:zip_file_sha) { Bits::Digester.new.digest_path(zip_file) }
 
-  let(:blobstore_path) do
-    blobstore_key = "#{guid}_#{zip_file_sha}"
+  let(:resource_path) do
+    "/buildpacks/#{guid}"
+  end
+
+  let(:guid) do
+    response = make_post_request(collection_path, upload_body)
+    JSON.parse(response.body)['guid']
+  end
+
+  def blobstore_path(guid)
     File.join(
       @root_dir,
       'directory-key',
-      blobstore_key[0..1],
-      blobstore_key[2..3],
-      blobstore_key
+      guid[0..1],
+      guid[2..3],
+      guid
     )
   end
 
@@ -63,14 +68,16 @@ describe 'buildpacks resource', type: :integration do
     end
 
     it 'correctly stores the file in the blob store' do
-      make_post_request(collection_path, upload_body)
+      response = make_post_request(collection_path, upload_body)
+      json_response = JSON.parse(response.body)
 
-      expect(File).to exist(blobstore_path)
-      expect(Bits::Digester.new.digest_path(blobstore_path)).to eq zip_file_sha
+      expected_path = blobstore_path(json_response['guid'])
+      expect(File).to exist(expected_path)
+      expect(Bits::Digester.new.digest_path(expected_path)).to eq zip_file_sha
     end
 
     context 'when an empty request body is being sent' do
-      let(:upload_body) { { buildpack_name: 'original.zip', guid: guid } }
+      let(:upload_body) { { buildpack_name: 'original.zip' } }
 
       it 'returns HTTP status 400' do
         response = make_post_request(collection_path, upload_body)
@@ -85,7 +92,7 @@ describe 'buildpacks resource', type: :integration do
     end
 
     context 'when the original uploaded file name is missing' do
-      let(:upload_body) { { buildpack: zip_file, guid: guid } }
+      let(:upload_body) { { buildpack: zip_file } }
 
       it 'returns HTTP status 400' do
         response = make_post_request(collection_path, upload_body)
@@ -102,10 +109,6 @@ describe 'buildpacks resource', type: :integration do
 
   describe 'GET /buildpacks/:guid' do
     context 'when the buildpack exists' do
-      before(:each) do
-        make_post_request(collection_path, upload_body)
-      end
-
       it 'returns HTTP status code 200' do
         response = make_get_request(resource_path)
         expect(response.code).to eq 200
@@ -118,6 +121,8 @@ describe 'buildpacks resource', type: :integration do
     end
 
     context 'when the buildpack does not exist' do
+      let(:resource_path) { '/buildpacks/not-existing' }
+
       it 'returns HTTP status code 404' do
         response = make_get_request(resource_path)
         expect(response.code).to eq 404
@@ -133,23 +138,22 @@ describe 'buildpacks resource', type: :integration do
 
   describe 'DELETE /buildpacks/:guid' do
     context 'when the buildpack exists' do
-      before(:each) do
-        make_post_request(collection_path, upload_body)
-      end
-
       it 'returns HTTP status code 200' do
         response = make_delete_request(resource_path)
         expect(response.code).to eq 200
       end
 
       it 'removes the stored file' do
-        expect(File).to exist(blobstore_path)
+        expected_path = blobstore_path(guid)
+        expect(File).to exist(expected_path)
         make_delete_request(resource_path)
-        expect(File).to_not exist(blobstore_path)
+        expect(File).to_not exist(expected_path)
       end
     end
 
     context 'when the buildpack does not exist' do
+      let(:resource_path) { '/buildpacks/not-existing' }
+
       it 'returns HTTP status code 404' do
         response = make_delete_request(resource_path)
         expect(response.code).to eq 404

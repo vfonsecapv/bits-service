@@ -23,9 +23,9 @@ module Bits
 
     let(:zip_file_sha) { Digester.new.digest_path(zip_file) }
 
-    let(:buildpack_guid) { SecureRandom.uuid }
+    let(:guid) { SecureRandom.uuid }
 
-    let(:upload_body) { { buildpack: zip_file, buildpack_name: zip_filename, guid: buildpack_guid  } }
+    let(:upload_body) { { buildpack: zip_file, buildpack_name: zip_filename } }
 
     let(:use_nginx) { false }
 
@@ -64,6 +64,7 @@ module Bits
       before do
         allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
         allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
+        allow(SecureRandom).to receive(:uuid).and_return(guid)
       end
 
       it 'returns HTTP status 201' do
@@ -74,11 +75,17 @@ module Bits
       it 'stores the uploaded file in the buildpack blobstore using the correct key' do
         blobstore = double(Bits::Blobstore::Client)
         expect_any_instance_of(Bits::BlobstoreFactory).to receive(:create_buildpack_blobstore).and_return(blobstore)
-
-        expected_key = "#{buildpack_guid}_#{zip_file_sha}"
-        expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, expected_key)
+        expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, guid)
 
         post '/buildpacks', upload_body, headers
+      end
+
+      it 'returns json with metadata about the upload' do
+        post '/buildpacks', upload_body, headers
+
+        json = MultiJson.load(last_response.body)
+        expect(json['guid']).to eq(guid)
+        expect(json['digest']).to eq(zip_file_sha)
       end
 
       it 'instantiates the blobstore factory with the right config' do
@@ -161,7 +168,7 @@ module Bits
       end
 
       context 'when a non-zip file is being uploaded' do
-        let(:upload_body) { { buildpack: non_zip_file, guid: buildpack_guid } }
+        let(:upload_body) { { buildpack: non_zip_file, guid: guid } }
 
         it 'returns a corresponding error' do
           allow_any_instance_of(UploadParams).to receive(:original_filename).and_return('invalid.tar')
@@ -230,7 +237,7 @@ module Bits
 
       let(:blobstore) do
         double(Bits::Blobstore::Client).tap do |blobstore|
-          allow(blobstore).to receive(:blobs_for_key_prefix).with(buildpack_guid).and_return(blobs)
+          allow(blobstore).to receive(:blobs_for_key_prefix).with(guid).and_return(blobs)
         end
       end
 
@@ -240,22 +247,22 @@ module Bits
 
       it 'instantiates the blobstore factory using the config' do
         expect(Bits::BlobstoreFactory).to receive(:new).with(config).once
-        get "/buildpacks/#{buildpack_guid}", headers
+        get "/buildpacks/#{guid}", headers
       end
 
       it 'creates the buildpack blobstore using the blobstore factory' do
         expect_any_instance_of(Bits::BlobstoreFactory).to receive(:create_buildpack_blobstore).once
-        get "/buildpacks/#{buildpack_guid}", headers
+        get "/buildpacks/#{guid}", headers
       end
 
       it 'finds the blob inside the blobstore using the correct guid' do
-        expect(blobstore).to receive(:blobs_for_key_prefix).with(buildpack_guid)
-        get "/buildpacks/#{buildpack_guid}", headers
+        expect(blobstore).to receive(:blobs_for_key_prefix).with(guid)
+        get "/buildpacks/#{guid}", headers
       end
 
       it 'checks whether the blobstore is local' do
         expect(blobstore).to receive(:local?).once
-        get "/buildpacks/#{buildpack_guid}", headers
+        get "/buildpacks/#{guid}", headers
       end
 
       context 'when the blobstore is local' do
@@ -267,18 +274,18 @@ module Bits
           let(:use_nginx) { true }
 
           it 'returns HTTP status code 200' do
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
             expect(last_response.status).to eq(200)
           end
 
           it 'sets the X-Accel-Redirect response header' do
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
             expect(last_response.headers).to include('X-Accel-Redirect' => download_url)
           end
 
           it 'gets the download_url from the blob' do
             expect(blob).to receive(:download_url).once
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
           end
         end
 
@@ -290,33 +297,33 @@ module Bits
           end
 
           it 'returns HTTP status code 200' do
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
             expect(last_response.status).to eq(200)
           end
 
           it 'sets the right Content-Type header' do
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
             expect(last_response.headers).to include('Content-Type' => 'application/zip')
           end
 
           it 'sets the right Content-Length header' do
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
             expect(last_response.headers).to include('Content-Length' => File.size(zip_filepath).to_s)
           end
 
           it 'returns the file contents in the response body' do
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
             expect(last_response.body).to eq(File.open(zip_filepath, 'rb').read)
           end
 
           it 'does not set the X-Accel-Redirect response header' do
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
             expect(last_response.headers).to_not include('X-Accel-Redirect')
           end
 
           it 'gets the local_path from the blob' do
             expect(blob).to receive(:local_path).once
-            get "/buildpacks/#{buildpack_guid}", headers
+            get "/buildpacks/#{guid}", headers
           end
         end
       end
@@ -327,12 +334,12 @@ module Bits
         end
 
         it 'returns HTTP status code 302' do
-          get "/buildpacks/#{buildpack_guid}", headers
+          get "/buildpacks/#{guid}", headers
           expect(last_response.status).to eq(302)
         end
 
         it 'sets the location header to the correct value' do
-          get "/buildpacks/#{buildpack_guid}", headers
+          get "/buildpacks/#{guid}", headers
           expect(last_response.headers).to include('Location' => download_url)
         end
       end
@@ -341,7 +348,7 @@ module Bits
         let(:blob) { nil }
 
         it 'returns a corresponding error' do
-          get "/buildpacks/#{buildpack_guid}", headers
+          get "/buildpacks/#{guid}", headers
 
           expect(last_response.status).to eq(404)
           json = MultiJson.load(last_response.body)
@@ -366,20 +373,20 @@ module Bits
       end
 
       it 'returns HTTP status code 200' do
-        delete "/buildpacks/#{buildpack_guid}", headers
+        delete "/buildpacks/#{guid}", headers
         expect(last_response.status).to eq(200)
       end
 
       it 'deletes the blob using the blobstore client' do
         expect(blobstore).to receive(:delete_blob).with(blob)
-        delete "/buildpacks/#{buildpack_guid}", headers
+        delete "/buildpacks/#{guid}", headers
       end
 
       context 'when the buildpack does not exist' do
         let(:blob) { nil }
 
         it 'returns a corresponding error' do
-          delete "/buildpacks/#{buildpack_guid}", headers
+          delete "/buildpacks/#{guid}", headers
 
           expect(last_response.status).to eq(404)
           json = MultiJson.load(last_response.body)

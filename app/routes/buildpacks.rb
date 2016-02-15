@@ -3,7 +3,6 @@ module Bits
     class Buildpacks < Base
       post '/buildpacks' do
         begin
-          guid = params[:guid]
           upload_params = UploadParams.new(params, use_nginx: use_nginx?)
 
           uploaded_filepath = upload_params.upload_filepath('buildpack')
@@ -12,13 +11,13 @@ module Bits
           fail Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'only zip files allowed') unless File.extname(original_filename) == '.zip'
           fail Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
 
-          sha = Digester.new.digest_path(uploaded_filepath)
-          destination_key = "#{guid}_#{sha}"
+          digest = Digester.new.digest_path(uploaded_filepath)
+          guid = SecureRandom.uuid
 
           blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
-          blobstore.cp_to_blobstore(uploaded_filepath, destination_key)
+          blobstore.cp_to_blobstore(uploaded_filepath, guid)
 
-          status 201
+          json 201, { guid: guid, digest: digest }
         ensure
           FileUtils.rm_f(uploaded_filepath) if uploaded_filepath
         end

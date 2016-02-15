@@ -19,6 +19,14 @@ module Bits
         logger.error('error', description: error.message, code: error.code)
         halt error.response_code, { description: error.message, code: error.code }.to_json
       end
+
+      private
+
+      def json(status_code, body)
+        content_type :json
+        status status_code
+        body.to_json
+      end
     end
   end
 end
