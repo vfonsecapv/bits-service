@@ -229,15 +229,13 @@ module Bits
     describe 'GET /buildpacks/:guid' do
       let(:download_url) { 'some-url' }
 
-      let(:blobs) { [blob] }
-
       let(:blob) do
         double(Bits::Blobstore::Blob, download_url: download_url)
       end
 
       let(:blobstore) do
         double(Bits::Blobstore::Client).tap do |blobstore|
-          allow(blobstore).to receive(:blobs_for_key_prefix).with(guid).and_return(blobs)
+          allow(blobstore).to receive(:blob).with(guid).and_return(blob)
         end
       end
 
@@ -256,7 +254,7 @@ module Bits
       end
 
       it 'finds the blob inside the blobstore using the correct guid' do
-        expect(blobstore).to receive(:blobs_for_key_prefix).with(guid)
+        expect(blobstore).to receive(:blob).with(guid)
         get "/buildpacks/#{guid}", headers
       end
 
@@ -359,12 +357,12 @@ module Bits
     end
 
     describe 'DELETE /buildpacks/:guid' do
-      let(:blobs) { [blob] }
       let(:blob) do
         double(Bits::Blobstore::Blob)
       end
+
       let(:blobstore) do
-        double(Bits::Blobstore::Client, blobs_for_key_prefix: blobs)
+        double(Bits::Blobstore::Client, blob: blob)
       end
 
       before(:each) do

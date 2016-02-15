@@ -25,7 +25,7 @@ module Bits
 
       get '/buildpacks/:guid' do |guid|
         blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
-        blob = blobstore.blobs_for_key_prefix(guid).first
+        blob = blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
         if blobstore.local?
@@ -41,7 +41,7 @@ module Bits
 
       delete '/buildpacks/:guid' do |guid|
         blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
-        blob = blobstore.blobs_for_key_prefix(guid).first
+        blob = blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
         blobstore.delete_blob(blob)
       end

@@ -154,11 +154,6 @@ module Bits
         Blob.new(f, @cdn) if f
       end
 
-      def blobs_for_key_prefix(prefix)
-        prefix = partitioned_key(prefix)
-        files_for(prefix).collect { |f| Blob.new(f, @cdn) }
-      end
-
       # Deprecated should not allow to access underlying files
       def files
         dir.files

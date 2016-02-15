@@ -184,27 +184,6 @@ module Bits
           Client.new(connection_config, directory_key)
         end
 
-        describe '#blobs_for_key_prefix' do
-          let(:prefix) { 'some-prefix' }
-          let(:files) { %w(file1 file2) }
-
-          before(:each) do
-            allow(subject).to receive(:files_for).and_return(files)
-          end
-
-          it 'calls files_for with the correct partitioned key prefix' do
-            pk = 'partitioned_key'
-            expect(subject).to receive(:partitioned_key).with(prefix).and_return(pk)
-            expect(subject).to receive(:files_for).with(pk)
-            subject.blobs_for_key_prefix(prefix)
-          end
-
-          it 'wraps the expected blobs' do
-            blobs = subject.blobs_for_key_prefix(prefix)
-            expect(blobs.collect(&:file)).to eq files
-          end
-        end
-
         context 'with existing files' do
           before do
             upload_tmpfile(client, sha_of_content)
