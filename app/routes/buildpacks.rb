@@ -44,6 +44,7 @@ module Bits
         blob = blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
         blobstore.delete_blob(blob)
+        status 204
       end
     end
   end

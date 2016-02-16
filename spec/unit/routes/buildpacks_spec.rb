@@ -370,9 +370,9 @@ module Bits
         allow(blobstore).to receive(:delete_blob).and_return(true)
       end
 
-      it 'returns HTTP status code 200' do
+      it 'returns HTTP status code 204' do
         delete "/buildpacks/#{guid}", headers
-        expect(last_response.status).to eq(200)
+        expect(last_response.status).to eq(204)
       end
 
       it 'deletes the blob using the blobstore client' do

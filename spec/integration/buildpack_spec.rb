@@ -138,9 +138,9 @@ describe 'buildpacks resource', type: :integration do
 
   describe 'DELETE /buildpacks/:guid' do
     context 'when the buildpack exists' do
-      it 'returns HTTP status code 200' do
+      it 'returns HTTP status code 204' do
         response = make_delete_request(resource_path)
-        expect(response.code).to eq 200
+        expect(response.code).to eq 204
       end
 
       it 'removes the stored file' do
