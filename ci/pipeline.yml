@@ -4,8 +4,11 @@ groups:
   - run-tests
 - name: bits-service-release
   jobs:
-  - build-and-deploy
-  - run-system-tests
+  - create-and-upload-release
+  - deploy-with-S3
+  - deploy-with-LOCAL
+  - run-system-tests-S3
+  - run-system-tests-LOCAL
 - name: clound-controller
   jobs:
   - cc-tests
@@ -47,14 +50,6 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/cf-release.git
     branch: wip-bits-service
-
-- name: bits-service-deployment
-  type: bosh-deployment
-  source:
-    target: {{bosh-target}}
-    username: {{bosh-username}}
-    password: {{bosh-password}}
-    deployment: bits-service
 
 - name: cf-deployment
   type: bosh-deployment
@@ -107,7 +102,8 @@ jobs:
     file: git-bits-service/ci/tasks/run-tests.yml
 
 # BITS-RELEASE
-- name: build-and-deploy
+
+- name: create-and-upload-release
   plan:
   - aggregate:
     - get: bits-service-release-version
@@ -123,30 +119,108 @@ jobs:
     file: git-bits-service-release/ci/tasks/create-bits-release.yml
     config:
       params:
+        VERSION_FILE: ../bits-service-release-version/number
+  - task: upload-release
+    file: git-bits-service-release/ci/tasks/upload-release.yml
+    config:
+      params:
         BOSH_TARGET: {{bosh-target}}
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
-        VERSION_FILE: ../bits-service-release-version/number
-  - put: bits-service-deployment
-    params:
-      cleanup: true
-      manifest: assets/manifest.yml
-      stemcells:
-      - stemcell/stemcell.tgz
-      releases:
-      - assets/bits-service-*.tgz
-- name: run-system-tests
+        RELEASE_FILE: ../releases/bits-service-*.tgz
+
+- name: deploy-with-S3
   plan:
+  - aggregate:
     - get: bits-service-release-version
-      passed: [build-and-deploy]
+      passed: [create-and-upload-release]
       trigger: true
     - get: git-bits-service-release
-      passed: [build-and-deploy]
-    - task: run-tests
-      file: git-bits-service-release/ci/tasks/run-tests.yml
-      config:
-        params:
-          BITS_SERVICE_ENDPOINT: 10.250.0.2
+      passed: [create-and-upload-release]
+    - get: stemcell
+      passed: [create-and-upload-release]
+  - task: create-manifest
+    file: git-bits-service-release/ci/tasks/create-bits-manifest.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        BITS_DIRECTORY_KEY: {{s3-blobstore-bucket-name}}
+        BITS_AWS_REGION: {{s3-blobstore-region}}
+        AWS_ACCESS_KEY_ID: {{s3-blobstore-access-key-id}}
+        AWS_SECRET_ACCESS_KEY: {{s3-blobstore-secret-access-key}}
+        BLOBSTORE_TYPE: s3
+  - task: deploy
+    file: git-bits-service-release/ci/tasks/deploy-release.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        MANIFEST_PATH: ../manifests/manifest.yml
+
+- name: run-system-tests-S3
+  plan:
+  - get: bits-service-release-version
+    passed: [deploy-with-S3]
+    trigger: true
+  - get: git-bits-service-release
+    passed: [deploy-with-S3]
+  - task: run-tests
+    file: git-bits-service-release/ci/tasks/run-tests.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        BITS_SERVICE_ENDPOINT: 10.250.1.2
+        RELEASE_NAME: bits-service-s3
+
+- name: deploy-with-LOCAL
+  plan:
+  - aggregate:
+    - get: bits-service-release-version
+      passed: [create-and-upload-release]
+      trigger: true
+    - get: git-bits-service-release
+      passed: [create-and-upload-release]
+    - get: stemcell
+      passed: [create-and-upload-release]
+  - task: create-manifest
+    file: git-bits-service-release/ci/tasks/create-bits-manifest.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        BITS_DIRECTORY_KEY: another-directory
+        BLOBSTORE_TYPE: local
+  - task: deploy
+    file: git-bits-service-release/ci/tasks/deploy-release.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        MANIFEST_PATH: ../manifests/manifest.yml
+
+- name: run-system-tests-LOCAL
+  plan:
+  - get: bits-service-release-version
+    passed: [deploy-with-LOCAL]
+    trigger: true
+  - get: git-bits-service-release
+    passed: [deploy-with-LOCAL]
+  - task: run-tests
+    file: git-bits-service-release/ci/tasks/run-tests.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        BITS_SERVICE_ENDPOINT: 10.250.0.2
+        RELEASE_NAME: bits-service-local
 
 # CLOUD CONTROLLER
 - name: cc-tests
@@ -166,7 +240,6 @@ jobs:
     - put: cf-deployment-lock
       params: { acquire: true }
     - get: bits-service-release-version
-      passed: [run-system-tests]
       trigger: true
     - get: cf-release-version
       params:
