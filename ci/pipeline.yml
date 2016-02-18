@@ -5,10 +5,12 @@ groups:
 - name: bits-service-release
   jobs:
   - create-and-upload-release
+  - release-bits-release-lock
   - deploy-with-S3
   - deploy-with-LOCAL
   - run-system-tests-S3
   - run-system-tests-LOCAL
+  - done
 - name: clound-controller
   jobs:
   - cc-tests
@@ -92,6 +94,14 @@ resources:
     pool: locks/cf-release
     private_key: {{github-private-key}}
 
+- name: bits-release-deployment-lock
+  type: pool
+  source:
+    uri: git@github.com:cloudfoundry-incubator/bits-service.git
+    branch: metadata
+    pool: locks/bits-service-release
+    private_key: {{github-private-key}}
+
 jobs:
 # BITS-SERVICE
 - name: run-tests
@@ -106,6 +116,8 @@ jobs:
 - name: create-and-upload-release
   plan:
   - aggregate:
+    - put: bits-release-deployment-lock
+      params: { acquire: true }
     - get: bits-service-release-version
       params:
         pre: dev
@@ -120,6 +132,9 @@ jobs:
     config:
       params:
         VERSION_FILE: ../bits-service-release-version/number
+    on_failure:
+      put: bits-release-deployment-lock
+      params: { release: bits-release-deployment-lock }
   - task: upload-release
     file: git-bits-service-release/ci/tasks/upload-release.yml
     config:
@@ -128,13 +143,25 @@ jobs:
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
         RELEASE_FILE: ../releases/bits-service-*.tgz
+    on_failure:
+      put: bits-release-deployment-lock
+      params: { release: bits-release-deployment-lock }
+
+- name: release-bits-release-lock
+  plan:
+  - get: bits-release-deployment-lock
+    passed: [create-and-upload-release]
+  - put: bits-release-deployment-lock
+    params: { release: bits-release-deployment-lock }
 
 - name: deploy-with-S3
   plan:
   - aggregate:
+    - get: bits-release-deployment-lock
+      trigger: true
+      passed: [create-and-upload-release]
     - get: bits-service-release-version
       passed: [create-and-upload-release]
-      trigger: true
     - get: git-bits-service-release
       passed: [create-and-upload-release]
     - get: stemcell
@@ -162,11 +189,14 @@ jobs:
 
 - name: run-system-tests-S3
   plan:
-  - get: bits-service-release-version
-    passed: [deploy-with-S3]
-    trigger: true
-  - get: git-bits-service-release
-    passed: [deploy-with-S3]
+  - aggregate:
+    - get: bits-release-deployment-lock
+      trigger: true
+      passed: [deploy-with-S3]
+    - get: bits-service-release-version
+      passed: [deploy-with-S3]
+    - get: git-bits-service-release
+      passed: [deploy-with-S3]
   - task: run-tests
     file: git-bits-service-release/ci/tasks/run-tests.yml
     config:
@@ -180,9 +210,11 @@ jobs:
 - name: deploy-with-LOCAL
   plan:
   - aggregate:
+    - get: bits-release-deployment-lock
+      trigger: true
+      passed: [create-and-upload-release]
     - get: bits-service-release-version
       passed: [create-and-upload-release]
-      trigger: true
     - get: git-bits-service-release
       passed: [create-and-upload-release]
     - get: stemcell
@@ -207,11 +239,15 @@ jobs:
 
 - name: run-system-tests-LOCAL
   plan:
-  - get: bits-service-release-version
-    passed: [deploy-with-LOCAL]
-    trigger: true
-  - get: git-bits-service-release
-    passed: [deploy-with-LOCAL]
+  - aggregate:
+    - get: bits-release-deployment-lock
+      trigger: true
+      passed: [deploy-with-LOCAL]
+    - get: bits-service-release-version
+      passed: [deploy-with-LOCAL]
+      trigger: true
+    - get: git-bits-service-release
+      passed: [deploy-with-LOCAL]
   - task: run-tests
     file: git-bits-service-release/ci/tasks/run-tests.yml
     config:
@@ -221,6 +257,21 @@ jobs:
         BOSH_PASSWORD: {{bosh-password}}
         BITS_SERVICE_ENDPOINT: 10.250.0.2
         RELEASE_NAME: bits-service-local
+
+- name: done
+  plan:
+  - aggregate:
+    - get: bits-service-release-version
+      passed:
+        - run-system-tests-LOCAL
+        - run-system-tests-S3
+    - get: bits-release-deployment-lock
+      trigger: true
+      passed:
+        - run-system-tests-LOCAL
+        - run-system-tests-S3
+  - put: bits-release-deployment-lock
+    params: { release: bits-release-deployment-lock }
 
 # CLOUD CONTROLLER
 - name: cc-tests
@@ -240,6 +291,7 @@ jobs:
     - put: cf-deployment-lock
       params: { acquire: true }
     - get: bits-service-release-version
+      passed: [done]
       trigger: true
     - get: cf-release-version
       params:
