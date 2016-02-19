@@ -11,7 +11,7 @@ groups:
   - run-system-tests-S3
   - run-system-tests-LOCAL
   - done
-- name: clound-controller
+- name: cloud-controller
   jobs:
   - cc-tests
 - name: cf-release
