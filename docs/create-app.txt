@@ -1,0 +1,26 @@
+title Create App Today
+
+cf->CC: PUT /v2/apps/:guid
+CC-->cf: 201
+cf->CC: PUT /v2/resource_match [known file SHAs]
+
+loop existing files
+  CC->Blobstore: HEAD file
+  Blobstore-->CC:
+end
+
+CC-->cf: files to upload
+cf->cf: create ZIP
+cf->CC: POST /v2/apps/:guid/bits
+
+loop existing files
+  CC->Blobstore: fetch file
+  Blobstore-->CC: file
+end
+
+loop new files
+  CC->Blobstore: store file
+  Blobstore-->CC:
+end
+
+CC->CC: Assemble package
