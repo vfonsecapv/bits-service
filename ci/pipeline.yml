@@ -320,9 +320,16 @@ jobs:
     on_failure:
       put: cf-deployment-lock
       params: { release: cf-deployment-lock }
+  - task: delete-deployment
+    file: git-bits-service-release/ci/tasks/delete-deployment.yml
+    config:
+      params:
+        DEPLOYMENT_NAME: cf-warden
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
   - put: cf-deployment
     params:
-      cleanup: true
       manifest: git-bits-service-release/ci/manifests/cf-without-flag.yml
       stemcells:
       - stemcell/stemcell.tgz
@@ -370,6 +377,14 @@ jobs:
     - get: stemcell
       passed:
       - create-and-deploy-CF
+  - task: delete-deployment
+    file: git-bits-service-release/ci/tasks/delete-deployment.yml
+    config:
+      params:
+        DEPLOYMENT_NAME: cf-warden
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
   - task: turn-BITS-flag-ON
     config:
       platform: linux
