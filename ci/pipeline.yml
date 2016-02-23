@@ -376,13 +376,12 @@ jobs:
     - get: cf-deployment-lock
       trigger: true
       passed: [CATs]
+    - get: bits-service-release-version
+      passed: [create-and-deploy-CF]
     - get: git-bits-service-release
       trigger: true
       passed:
         - CATs
-    - get: stemcell
-      passed:
-      - create-and-deploy-CF
   - task: delete-deployment
     file: git-bits-service-release/ci/tasks/delete-deployment.yml
     config:
