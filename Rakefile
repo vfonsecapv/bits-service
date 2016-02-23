@@ -25,11 +25,11 @@ task :rubocop_autocorrect do
 end
 
 namespace :docs do
-  SOURCE_FILES = FileList["docs/*.txt"]
-  CLEAN.include SOURCE_FILES.pathmap("%d/%n.png")
+  SOURCE_FILES = FileList['docs/*.txt']
+  CLEAN.include SOURCE_FILES.pathmap('%d/%n.png')
 
   SOURCE_FILES.each do |src|
-    target = src.pathmap("%d/%n.png")
+    target = src.pathmap('%d/%n.png')
     desc "Render #{target} from #{src}"
     file target do
       websequencediagram(target, src)
