@@ -1,14 +1,14 @@
 require 'yaml'
 
-module Bits
+module BitsService
   module Helpers
     module Config
       def config
-        Bits::Environment.config
+        BitsService::Environment.config
       end
 
       def logger
-        Bits::Environment.logger
+        BitsService::Environment.logger
       end
 
       def use_nginx?

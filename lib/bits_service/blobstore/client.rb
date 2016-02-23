@@ -2,7 +2,7 @@ require 'fileutils'
 require 'find'
 require 'fog'
 
-module Bits
+module BitsService
   module Blobstore
     class Client
       class FileNotFound < StandardError

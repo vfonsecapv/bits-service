@@ -1,23 +1,21 @@
-require 'rubygems'
 require 'bundler'
-
 Bundler.require
+
+$LOAD_PATH.unshift File.join(File.dirname(__FILE__), 'lib')
 
 require 'active_support/core_ext/object/try'
 require 'active_support/core_ext/hash/keys'
 
-Dir[File.expand_path('../app/**/*.rb', __FILE__)].each do |file|
-  require file
-end
+require 'bits_service'
 
-require_relative 'config/environment'
+BitsService::Environment.init
 
-Bits::Environment.init
-helpers Bits::Helpers::Config
+require 'bits_service/helpers/config'
+helpers BitsService::Helpers::Config
 
 set :dump_errors, false if ENV['RACK_ENV'] == 'production'
 
-module Bits
+module BitsService
   class App < Sinatra::Application
     use Routes::Buildpacks
   end

@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'webrick'
 
-module Bits
+module BitsService
   module Blobstore
     describe Client do
       let(:content) { 'Some Nonsense' }
@@ -604,7 +604,7 @@ module Bits
           context 'when the source key has no file associated with it' do
             it 'does not attempt to copy over to the destination key' do
               expect { client.cp_file_between_keys(src_key, dest_key) }.
-                to raise_error(Bits::Blobstore::Client::FileNotFound)
+                to raise_error(BitsService::Blobstore::Client::FileNotFound)
 
               expect(client.files).to have(0).items
             end
@@ -831,7 +831,7 @@ module Bits
           end
 
           it "should be ok if the file doesn't exist" do
-            blob = ::Bits::Blobstore::Blob.new(nil, nil)
+            blob = ::BitsService::Blobstore::Blob.new(nil, nil)
             expect { client.delete_blob(blob) }.to_not raise_error
           end
         end

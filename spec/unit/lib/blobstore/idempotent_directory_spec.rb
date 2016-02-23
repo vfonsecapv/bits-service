@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bits
+module BitsService
   module Blobstore
     describe IdempotentDirectory do
       let(:fog_directory) do

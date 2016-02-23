@@ -1,4 +1,4 @@
-module Bits
+module BitsService
   module Blobstore
     class Directory
       def initialize(connection, key)

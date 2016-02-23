@@ -1,4 +1,4 @@
-module Bits
+module BitsService
   module Routes
     class Buildpacks < Base
       post '/buildpacks' do
@@ -14,7 +14,7 @@ module Bits
           digest = Digester.new.digest_path(uploaded_filepath)
           guid = SecureRandom.uuid
 
-          blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
+          blobstore = Blobstore::Factory.new(config).create_buildpack_blobstore
           blobstore.cp_to_blobstore(uploaded_filepath, guid)
 
           json 201, { guid: guid, digest: digest }
@@ -24,7 +24,7 @@ module Bits
       end
 
       get '/buildpacks/:guid' do |guid|
-        blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
+        blobstore = Blobstore::Factory.new(config).create_buildpack_blobstore
         blob = blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
@@ -40,7 +40,7 @@ module Bits
       end
 
       delete '/buildpacks/:guid' do |guid|
-        blobstore = BlobstoreFactory.new(config).create_buildpack_blobstore
+        blobstore = Blobstore::Factory.new(config).create_buildpack_blobstore
         blob = blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
         blobstore.delete_blob(blob)

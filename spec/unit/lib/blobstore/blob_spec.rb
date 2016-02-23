@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bits
+module BitsService
   module Blobstore
     describe Blob do
       subject(:blob) do

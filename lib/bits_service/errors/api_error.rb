@@ -1,6 +1,6 @@
 require 'i18n/backend/fallbacks'
 
-module Bits
+module BitsService
   module Errors
     class ApiError < StandardError
       attr_accessor :args

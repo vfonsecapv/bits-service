@@ -1,4 +1,4 @@
-module Bits
+module BitsService
   module Blobstore
     # Central place to get download urls for a blob object stored in a blobstore
     class Blob

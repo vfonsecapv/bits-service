@@ -1,4 +1,4 @@
-module Bits
+module BitsService
   class Digester
     ALGORITHM = Digest::SHA1
     TYPE = :hexdigest

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module Bits
+module BitsService
   describe Digester do
     let(:tempfile) do
       Tempfile.new('coolfile').tap do |f|

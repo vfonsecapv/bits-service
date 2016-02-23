@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'cloudfront-signer'
 
-module Bits
+module BitsService
   module Blobstore
     describe Cdn do
       let(:cdn_host) { 'https://some_distribution.cloudfront.net' }

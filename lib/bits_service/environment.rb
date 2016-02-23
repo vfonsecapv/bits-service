@@ -1,4 +1,4 @@
-module Bits
+module BitsService
   module Environment
     class << self
       def init

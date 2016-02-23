@@ -28,5 +28,5 @@ RSpec.configure do |conf|
 end
 
 def app
-  Bits::App
+  BitsService::App
 end

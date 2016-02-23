@@ -1,0 +1,6 @@
+require 'bits_service/blobstore/blob'
+require 'bits_service/blobstore/cdn'
+require 'bits_service/blobstore/client'
+require 'bits_service/blobstore/directory'
+require 'bits_service/blobstore/factory'
+require 'bits_service/blobstore/idempotent_directory'

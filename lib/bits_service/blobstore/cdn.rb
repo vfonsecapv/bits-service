@@ -1,6 +1,6 @@
 require 'cloudfront-signer'
 
-module Bits
+module BitsService
   module Blobstore
     class Cdn
       def self.make(host)

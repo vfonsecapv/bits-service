@@ -1,4 +1,4 @@
-module Bits
+module BitsService
   module Routes
     class Base < Sinatra::Application
       configure do

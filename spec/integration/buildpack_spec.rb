@@ -40,7 +40,7 @@ describe 'buildpacks resource', type: :integration do
 
   let(:upload_body) { { buildpack: zip_file, buildpack_name: 'original.zip' } }
 
-  let(:zip_file_sha) { Bits::Digester.new.digest_path(zip_file) }
+  let(:zip_file_sha) { BitsService::Digester.new.digest_path(zip_file) }
 
   let(:resource_path) do
     "/buildpacks/#{guid}"
@@ -73,7 +73,7 @@ describe 'buildpacks resource', type: :integration do
 
       expected_path = blobstore_path(json_response['guid'])
       expect(File).to exist(expected_path)
-      expect(Bits::Digester.new.digest_path(expected_path)).to eq zip_file_sha
+      expect(BitsService::Digester.new.digest_path(expected_path)).to eq zip_file_sha
     end
 
     context 'when an empty request body is being sent' do
