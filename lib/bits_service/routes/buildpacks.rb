@@ -1,10 +1,10 @@
+require_relative './base'
+
 module BitsService
   module Routes
     class Buildpacks < Base
       post '/buildpacks' do
         begin
-          upload_params = UploadParams.new(params, use_nginx: use_nginx?)
-
           uploaded_filepath = upload_params.upload_filepath('buildpack')
           original_filename = upload_params.original_filename('buildpack')
           fail Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a filename must be specified') if original_filename.to_s == ''
