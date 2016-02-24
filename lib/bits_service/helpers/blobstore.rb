@@ -13,7 +13,7 @@ module BitsService
 
       def create_client(key)
         cfg = config.fetch(key)
-        
+
         BitsService::Blobstore::Client.new(
           cfg.fetch(:fog_connection),
           cfg.fetch(:directory_key, key.to_s),
