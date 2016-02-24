@@ -6,6 +6,11 @@
 * Create a [new VPN password](https://control.softlayer.com/account/user/profile)
 * Set up the [VPN client](http://knowledgelayer.softlayer.com/procedure/ssl-vpn-mac-os-x-1010)
 
+# Team Communication
+
+* [#flintstone](https://cloudfoundry.slack.com/messages/flintstone/)
+* [Board](https://docs.google.com/document/d/14iuA0uaxmda1Ug1Vmwh7Qd3v65IWhsiP7buqRwEK4v8/)
+
 # BOSH
 
 * Bring up the VPN
@@ -46,8 +51,3 @@ fly intercept -t flintstone --job bits-service/run-tests
 # run a single task with local changes without having to commit to git before
 fly execute -t flintstone --config ci/tasks/run-tests.yml --input=git-bits-service=.
 ```
-
-# Undecided
-
-* Do we use the public Slack or a mailing list?
-* Do we need a private Slack channel or mailing list in addition to the public one?
