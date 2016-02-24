@@ -13,53 +13,101 @@ module BitsService
         allow(subject).to receive(:config).and_return(config)
       end
 
-      describe 'buildpack_blobstore' do
+      describe 'blobstore' do
         let(:config) do
           {
             buildpacks: {
+              fog_connection: 'fog_connection',
+              directory_key: 'directory_key'
+            },
+            droplets: {
               fog_connection: 'fog_connection',
               directory_key: 'directory_key'
             }
           }
         end
 
-        it 'returns a blobstore client' do
-          expect(subject.buildpack_blobstore).to be_a(BitsService::Blobstore::Client)
-        end
-
-        it 'creates a blobstore client with the correct config' do
-          expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
-          subject.buildpack_blobstore
-        end
-
-        context 'when :buildpack_directory_key is not present in config' do
-          let(:config) do
-            {
-              buildpacks: {
-                fog_connection: 'fog_connection'
-              }
-            }
+        context 'buildpacks' do
+          it 'returns a blobstore client' do
+            expect(subject.buildpack_blobstore).to be_a(BitsService::Blobstore::Client)
           end
 
-          it 'creates a blobstore client with the correct default directory key' do
-            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'buildpacks')
+          it 'creates a blobstore client with the correct config' do
+            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
             subject.buildpack_blobstore
           end
-        end
 
-        context 'when config is missing the :buildpacks key' do
-          let(:config) { Hash.new }
+          context 'when :directory_key is not present in config' do
+            let(:config) do
+              {
+                buildpacks: {
+                  fog_connection: 'fog_connection'
+                }
+              }
+            end
 
-          it 'throws an exception' do
-            expect { subject.buildpack_blobstore }.to raise_error(KeyError, /:buildpacks/)
+            it 'creates a blobstore client with the correct default directory key' do
+              expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'buildpacks')
+              subject.buildpack_blobstore
+            end
+          end
+
+          context 'when config is missing the :buildpacks key' do
+            let(:config) { Hash.new }
+
+            it 'throws an exception' do
+              expect { subject.buildpack_blobstore }.to raise_error(KeyError, /:buildpacks/)
+            end
+          end
+
+          context 'when config is missing the :fog_connection key' do
+            let(:config) { { buildpacks: {} } }
+
+            it 'throws an exception' do
+              expect { subject.buildpack_blobstore }.to raise_error(KeyError, /:fog_connection/)
+            end
           end
         end
 
-        context 'when config is missing the :fog_connection key' do
-          let(:config) { { buildpacks: {} } }
+        context 'droplets' do
+          it 'returns a blobstore client' do
+            expect(subject.droplet_blobstore).to be_a(BitsService::Blobstore::Client)
+          end
 
-          it 'throws an exception' do
-            expect { subject.buildpack_blobstore }.to raise_error(KeyError, /:fog_connection/)
+          it 'creates a blobstore client with the correct config' do
+            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
+            subject.droplet_blobstore
+          end
+
+          context 'when :directory_key is not present in config' do
+            let(:config) do
+              {
+                droplets: {
+                  fog_connection: 'fog_connection'
+                }
+              }
+            end
+
+            it 'creates a blobstore client with the correct default directory key' do
+              expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'droplets')
+              subject.droplet_blobstore
+            end
+          end
+
+          context 'when config is missing the :droplets key' do
+            let(:config) { Hash.new }
+
+            it 'throws an exception' do
+              expect { subject.droplet_blobstore }.to raise_error(KeyError, /:droplets/)
+            end
+          end
+
+          context 'when config is missing the :fog_connection key' do
+            let(:config) { { droplets: {} } }
+
+            it 'throws an exception' do
+              expect { subject.droplet_blobstore }.to raise_error(KeyError, /:fog_connection/)
+            end
           end
         end
       end

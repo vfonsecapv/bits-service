@@ -2,16 +2,22 @@ module BitsService
   module Helpers
     module Blobstore
       def buildpack_blobstore
-        @buildpack_blobstore ||= BitsService::Blobstore::Client.new(
-          buildpack_config.fetch(:fog_connection),
-          buildpack_config.fetch(:directory_key, 'buildpacks'),
-        )
+        @buildpack_blobstore ||= create_client(:buildpacks)
+      end
+
+      def droplet_blobstore
+        @droplet_blobstore ||= create_client(:droplets)
       end
 
       private
 
-      def buildpack_config
-        config.fetch(:buildpacks)
+      def create_client(key)
+        cfg = config.fetch(key)
+        
+        BitsService::Blobstore::Client.new(
+          cfg.fetch(:fog_connection),
+          cfg.fetch(:directory_key, key.to_s),
+        )
       end
     end
   end
