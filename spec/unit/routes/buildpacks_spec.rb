@@ -63,8 +63,8 @@ module BitsService
 
       describe 'POST /buildpacks' do
         before do
-          allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
-          allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
+          allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
+          allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
           allow(SecureRandom).to receive(:uuid).and_return(guid)
         end
 
@@ -102,17 +102,17 @@ module BitsService
         end
 
         it 'instantiates the upload params decorator with the right arguments' do
-          expect(UploadParams).to receive(:new).with(hash_including(
-                                                       'buildpack' => anything,
-                                                       'buildpack_name' => zip_filename
+          expect(Helpers::Upload::Params).to receive(:new).with(hash_including(
+                                                                  'buildpack' => anything,
+                                                                  'buildpack_name' => zip_filename
           ), use_nginx: false).once
 
           post '/buildpacks', upload_body, headers
         end
 
         it 'gets the uploaded filepath from the upload params decorator' do
-          decorator = double(UploadParams)
-          allow(UploadParams).to receive(:new).and_return(decorator)
+          decorator = double(Helpers::Upload::Params)
+          allow(Helpers::Upload::Params).to receive(:new).and_return(decorator)
           expect(decorator).to receive(:upload_filepath).with('buildpack').once
           post '/buildpacks', upload_body, headers
         end
@@ -123,20 +123,20 @@ module BitsService
         end
 
         it 'gets the sha of the uploaded file from the digester' do
-          allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+          allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
           expect_any_instance_of(Digester).to receive(:digest_path).with(zip_filepath).once
           post '/buildpacks', upload_body, headers
         end
 
         it 'does not leave the temporary instance of the uploaded file around' do
-          allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
+          allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
           post '/buildpacks', upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
         end
 
         context 'when the original filename is nil' do
           before(:each) do
-            allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(nil)
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(nil)
           end
 
           it 'returns a corresponding error' do
@@ -153,7 +153,7 @@ module BitsService
 
         context 'when no file is being uploaded' do
           before(:each) do
-            allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(nil)
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(nil)
           end
 
           it 'returns a corresponding error' do
@@ -172,7 +172,7 @@ module BitsService
           let(:upload_body) { { buildpack: non_zip_file, guid: guid } }
 
           it 'returns a corresponding error' do
-            allow_any_instance_of(UploadParams).to receive(:original_filename).and_return('invalid.tar')
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return('invalid.tar')
             post '/buildpacks', upload_body, headers
 
             expect(last_response.status).to eql 400
@@ -183,8 +183,8 @@ module BitsService
 
           it 'does not leave the temporary instance of the uploaded file around' do
             filepath = non_zip_file.tempfile.path
-            allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(filepath)
-            allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(filepath)
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
             post '/buildpacks', upload_body, headers
             expect(File.exist?(filepath)).to be_falsy
           end
@@ -201,8 +201,8 @@ module BitsService
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
-            allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
-            allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
             post '/buildpacks', upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
@@ -219,8 +219,8 @@ module BitsService
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
-            allow_any_instance_of(UploadParams).to receive(:upload_filepath).and_return(zip_filepath)
-            allow_any_instance_of(UploadParams).to receive(:original_filename).and_return(zip_filename)
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
+            allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
             post '/buildpacks', upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end

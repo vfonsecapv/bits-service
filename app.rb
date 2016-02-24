@@ -11,10 +11,10 @@ require 'bits_service'
 BitsService::Environment.init
 
 require 'bits_service/helpers/config'
-require 'bits_service/helpers/uploads'
+require 'bits_service/helpers/upload'
 
 helpers BitsService::Helpers::Config
-helpers BitsService::Helpers::Uploads
+helpers BitsService::Helpers::Upload
 
 set :dump_errors, false if ENV['RACK_ENV'] == 'production'
 
