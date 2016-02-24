@@ -9,6 +9,10 @@ module BitsService
         @droplet_blobstore ||= create_client(:droplets)
       end
 
+      def app_cache_blobstore
+        @app_cache_blobstore ||= create_client(:app_cache)
+      end
+
       private
 
       def create_client(key)

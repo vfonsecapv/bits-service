@@ -1,5 +1,10 @@
 buildpacks:
-  buildpack_directory_key: 'buildpacks'
+  directory_key: 'buildpacks'
+  fog_connection:
+    provider: 'local'
+    local_root: '/tmp/'
+app_cache:
+  directory_key: 'app_bits'
   fog_connection:
     provider: 'local'
     local_root: '/tmp/'

@@ -21,6 +21,7 @@ RSpec.configure do |conf|
   conf.include IntegrationSetup, type: :integration
 
   conf.include ConfigFileHelpers
+  conf.include FileHelpers
 
   conf.after :each do
     Timecop.return
