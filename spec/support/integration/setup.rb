@@ -19,7 +19,8 @@ module IntegrationSetupHelpers
     spawn_opts = {
       chdir: project_path,
       out: '/dev/null',
-      err: '/dev/null'
+      err: '/dev/null',
+      pgroup: true,
     }
 
     pid = Process.spawn(opts[:env], cmd, spawn_opts)
@@ -33,13 +34,14 @@ module IntegrationSetupHelpers
   end
 
   def graceful_kill(pid)
-    Process.kill('TERM', pid)
+    pgid = Process.getpgid(pid)
+    Process.kill('TERM', -pgid)
     Timeout.timeout(1) do
       Process.wait(pid)
     end
   rescue Timeout::Error
     Process.detach(pid)
-    Process.kill('KILL', pid)
+    Process.kill('KILL', -pgid)
   rescue Errno::ESRCH
     true
   end
