@@ -14,8 +14,7 @@ module BitsService
           digest = Digester.new.digest_path(uploaded_filepath)
           guid = SecureRandom.uuid
 
-          blobstore = Blobstore::Factory.new(config).create_buildpack_blobstore
-          blobstore.cp_to_blobstore(uploaded_filepath, guid)
+          buildpack_blobstore.cp_to_blobstore(uploaded_filepath, guid)
 
           json 201, { guid: guid, digest: digest }
         ensure
@@ -24,11 +23,10 @@ module BitsService
       end
 
       get '/buildpacks/:guid' do |guid|
-        blobstore = Blobstore::Factory.new(config).create_buildpack_blobstore
-        blob = blobstore.blob(guid)
+        blob = buildpack_blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
-        if blobstore.local?
+        if buildpack_blobstore.local?
           if use_nginx?
             return [200, { 'X-Accel-Redirect' => blob.download_url }, nil]
           else
@@ -40,10 +38,9 @@ module BitsService
       end
 
       delete '/buildpacks/:guid' do |guid|
-        blobstore = Blobstore::Factory.new(config).create_buildpack_blobstore
-        blob = blobstore.blob(guid)
+        blob = buildpack_blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
-        blobstore.delete_blob(blob)
+        buildpack_blobstore.delete_blob(blob)
         status 204
       end
     end

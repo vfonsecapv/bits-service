@@ -6,7 +6,7 @@ describe 'buildpacks resource', type: :integration do
 
     config = {
       buildpacks: {
-        buildpack_directory_key: 'directory-key',
+        directory_key: 'directory-key',
         fog_connection: {
           provider: 'local',
           local_root: @root_dir

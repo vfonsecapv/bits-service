@@ -75,7 +75,7 @@ module BitsService
 
         it 'stores the uploaded file in the buildpack blobstore using the correct key' do
           blobstore = double(BitsService::Blobstore::Client)
-          expect_any_instance_of(BitsService::Blobstore::Factory).to receive(:create_buildpack_blobstore).and_return(blobstore)
+          expect_any_instance_of(Routes::Buildpacks).to receive(:buildpack_blobstore).and_return(blobstore)
           expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, guid)
 
           post '/buildpacks', upload_body, headers
@@ -87,18 +87,6 @@ module BitsService
           json = MultiJson.load(last_response.body)
           expect(json['guid']).to eq(guid)
           expect(json['digest']).to eq(zip_file_sha)
-        end
-
-        it 'instantiates the blobstore factory with the right config' do
-          expect(BitsService::Blobstore::Factory).to receive(:new).with(hash_including(:buildpacks)).once
-          post '/buildpacks', upload_body, headers
-        end
-
-        it 'uses the blobstore factory to create a buildpack blobstore' do
-          blobstore_factory = double(BitsService::Blobstore::Factory)
-          allow(BitsService::Blobstore::Factory).to receive(:new).and_return(blobstore_factory)
-          expect(blobstore_factory).to receive(:create_buildpack_blobstore).once
-          post '/buildpacks', upload_body, headers
         end
 
         it 'instantiates the upload params decorator with the right arguments' do
@@ -140,7 +128,7 @@ module BitsService
           end
 
           it 'returns a corresponding error' do
-            expect(BitsService::Blobstore::Factory).to_not receive(:new)
+            expect_any_instance_of(Routes::Buildpacks).to_not receive(:buildpack_blobstore)
 
             post '/buildpacks', upload_body, headers
 
@@ -157,7 +145,7 @@ module BitsService
           end
 
           it 'returns a corresponding error' do
-            expect(BitsService::Blobstore::Factory).to_not receive(:new)
+            expect_any_instance_of(Routes::Buildpacks).to_not receive(:buildpack_blobstore)
 
             post '/buildpacks', upload_body, headers
 
@@ -208,9 +196,9 @@ module BitsService
           end
         end
 
-        context 'when the blobstore factory fails' do
+        context 'when the blobstore helper fails' do
           before(:each) do
-            allow(Blobstore::Factory).to receive(:new).and_raise('some error')
+            allow_any_instance_of(Routes::Buildpacks).to receive(:buildpack_blobstore).and_raise('some error')
           end
 
           it 'return HTTP status 500' do
@@ -241,16 +229,11 @@ module BitsService
         end
 
         before(:each) do
-          allow_any_instance_of(BitsService::Blobstore::Factory).to receive(:create_buildpack_blobstore).and_return(blobstore)
-        end
-
-        it 'instantiates the blobstore factory using the config' do
-          expect(BitsService::Blobstore::Factory).to receive(:new).with(config).once
-          get "/buildpacks/#{guid}", headers
+          allow_any_instance_of(Routes::Buildpacks).to receive(:buildpack_blobstore).and_return(blobstore)
         end
 
         it 'creates the buildpack blobstore using the blobstore factory' do
-          expect_any_instance_of(BitsService::Blobstore::Factory).to receive(:create_buildpack_blobstore).once
+          expect_any_instance_of(Routes::Buildpacks).to receive(:buildpack_blobstore).at_least(:once)
           get "/buildpacks/#{guid}", headers
         end
 
@@ -367,7 +350,7 @@ module BitsService
         end
 
         before(:each) do
-          allow_any_instance_of(BitsService::Blobstore::Factory).to receive(:create_buildpack_blobstore).and_return(blobstore)
+          allow_any_instance_of(Routes::Buildpacks).to receive(:buildpack_blobstore).and_return(blobstore)
           allow(blobstore).to receive(:delete_blob).and_return(true)
         end
 

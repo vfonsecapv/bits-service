@@ -12,6 +12,7 @@ BitsService::Environment.init
 
 helpers BitsService::Helpers::Config
 helpers BitsService::Helpers::Upload
+helpers BitsService::Helpers::Blobstore
 
 set :dump_errors, false if ENV['RACK_ENV'] == 'production'
 
