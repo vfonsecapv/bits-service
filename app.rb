@@ -20,5 +20,6 @@ module BitsService
   class App < Sinatra::Application
     use Routes::Buildpacks
     use Routes::AppCache
+    use Routes::Droplets
   end
 end

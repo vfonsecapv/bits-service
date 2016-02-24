@@ -6,7 +6,7 @@ module BitsService
         initialize_logger
       rescue KeyError => e
         puts 'Missing configuration file.'
-        puts 'Please set BITS_CONFIG_FILE to point to a valid configuraiton file.'
+        puts 'Please set BITS_CONFIG_FILE to point to a valid configuration file.'
         raise e
       end
 
