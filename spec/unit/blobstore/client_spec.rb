@@ -883,7 +883,7 @@ module BitsService
             cdn    = Cdn.make(uri)
             client = Client.new(connection_config, directory_key, cdn)
 
-            source_directory_path = File.expand_path('../../../fixtures/', File.dirname(__FILE__))
+            source_directory_path = File.expand_path('../../fixtures/', File.dirname(__FILE__))
             source_file_path = File.join(source_directory_path, 'pa/rt/partitioned_key')
             source_hexdigest = Digest::SHA2.file(source_file_path).hexdigest
 
@@ -920,7 +920,7 @@ module BitsService
 
           it 'correctly downloads byte streams' do
             Fog.unmock!
-            local_root = File.expand_path('../../../', File.dirname(__FILE__))
+            local_root = File.expand_path('../../', File.dirname(__FILE__))
             source_directory_path = File.join(local_root, 'fixtures')
 
             client = Client.new({ provider: 'Local', local_root: local_root }, 'fixtures')
