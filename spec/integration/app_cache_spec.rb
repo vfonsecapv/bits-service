@@ -25,6 +25,11 @@ describe 'app_cache resource', type: :integration do
     FileUtils.rm_rf(@root_dir)
   end
 
+  after(:each) do
+    FileUtils.rm_rf(@root_dir)
+    @root_dir = Dir.mktmpdir
+  end
+
   describe 'PUT /app_cache' do
     let(:zip_filepath) { File.expand_path('../../fixtures/integration/app.zip', __FILE__) }
     let(:request_body) { { application: File.new(zip_filepath) } }

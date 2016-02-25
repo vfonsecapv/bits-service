@@ -27,6 +27,8 @@ describe 'buildpacks resource', type: :integration do
 
   after(:each) do
     FileUtils.rm_rf(File.dirname(zip_filepath))
+    FileUtils.rm_rf(@root_dir)
+    @root_dir = Dir.mktmpdir
   end
 
   let(:zip_filepath) { File.join(Dir.mktmpdir, 'file.zip') }
