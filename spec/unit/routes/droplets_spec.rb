@@ -6,10 +6,8 @@ module BitsService
     describe Droplets do
       let(:headers) { Hash.new }
 
-      let(:zip_filename) { 'file.zip' }
-
       let(:zip_filepath) do
-        path = File.join(Dir.mktmpdir, zip_filename)
+        path = File.join(Dir.mktmpdir, 'file.zip')
         TestZip.create(path, 1, 1024)
         path
       end
@@ -24,7 +22,7 @@ module BitsService
 
       let(:guid) { SecureRandom.uuid }
 
-      let(:upload_body) { { droplet: zip_file, droplet_name: zip_filename } }
+      let(:upload_body) { { droplet: zip_file } }
 
       let(:use_nginx) { false }
 
@@ -149,7 +147,6 @@ module BitsService
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-            allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
             post '/droplets', upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
