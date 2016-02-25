@@ -112,10 +112,10 @@ module BitsService
         end
       end
 
-      describe 'app_cache_blobstore' do
+      describe 'app_stash_blobstore' do
         let(:config) do
           {
-            app_cache: {
+            app_stash: {
               fog_connection: 'fog_connection',
               directory_key: 'directory_key'
             }
@@ -123,26 +123,26 @@ module BitsService
         end
 
         it 'returns a blobstore client' do
-          expect(subject.app_cache_blobstore).to be_a(BitsService::Blobstore::Client)
+          expect(subject.app_stash_blobstore).to be_a(BitsService::Blobstore::Client)
         end
 
         it 'creates a blobstore client with the correct config' do
           expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
-          subject.app_cache_blobstore
+          subject.app_stash_blobstore
         end
 
         context 'when :directory_key is not present in config' do
           let(:config) do
             {
-              app_cache: {
+              app_stash: {
                 fog_connection: 'fog_connection'
               }
             }
           end
 
           it 'creates a blobstore client with the correct default directory key' do
-            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'app_cache')
-            subject.app_cache_blobstore
+            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'app_stash')
+            subject.app_stash_blobstore
           end
         end
 
@@ -150,15 +150,15 @@ module BitsService
           let(:config) { Hash.new }
 
           it 'throws an exception' do
-            expect { subject.app_cache_blobstore }.to raise_error(KeyError, /:app_cache/)
+            expect { subject.app_stash_blobstore }.to raise_error(KeyError, /:app_stash/)
           end
         end
 
         context 'when config is missing the :fog_connection key' do
-          let(:config) { { app_cache: {} } }
+          let(:config) { { app_stash: {} } }
 
           it 'throws an exception' do
-            expect { subject.app_cache_blobstore }.to raise_error(KeyError, /:fog_connection/)
+            expect { subject.app_stash_blobstore }.to raise_error(KeyError, /:fog_connection/)
           end
         end
       end

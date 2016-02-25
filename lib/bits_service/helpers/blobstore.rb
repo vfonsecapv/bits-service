@@ -9,8 +9,8 @@ module BitsService
         @droplet_blobstore ||= create_client(:droplets)
       end
 
-      def app_cache_blobstore
-        @app_cache_blobstore ||= create_client(:app_cache)
+      def app_stash_blobstore
+        @app_stash_blobstore ||= create_client(:app_stash)
       end
 
       private

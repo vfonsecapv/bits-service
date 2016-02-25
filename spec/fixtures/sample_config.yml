@@ -3,7 +3,7 @@ buildpacks:
   fog_connection:
     provider: 'local'
     local_root: '/tmp/'
-app_cache:
+app_stash:
   directory_key: 'app_bits'
   fog_connection:
     provider: 'local'

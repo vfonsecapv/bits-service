@@ -19,7 +19,7 @@ set :dump_errors, false if ENV['RACK_ENV'] == 'production'
 module BitsService
   class App < Sinatra::Application
     use Routes::Buildpacks
-    use Routes::AppCache
     use Routes::Droplets
+    use Routes::AppStash
   end
 end
