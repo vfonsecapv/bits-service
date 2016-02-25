@@ -17,8 +17,8 @@ module IntegrationHttp
     e.response
   end
 
-  def make_post_request(path, body)
-    RestClient.post "#{endpoint}#{path}", body
+  def make_post_request(path, body, headers={})
+    RestClient.post "#{endpoint}#{path}", body, headers
   rescue => e
     e.response
   end

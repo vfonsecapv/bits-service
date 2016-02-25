@@ -22,6 +22,25 @@ module BitsService
 
         status 201
       end
+
+      post '/app_stash/matches' do
+        begin
+          request.body.rewind
+          request_payload = JSON.parse request.body.read
+        rescue JSON::ParserError => e
+          fail Errors::ApiError.new_from_details('MessageParseError', e.message)
+        end
+
+        unless request_payload.is_a?(Array)
+          fail Errors::ApiError.new_from_details('UnprocessableEntity', 'must be an array.')
+        end
+
+        response_payload = request_payload.select do |resource|
+          resource.key?('sha1') && app_stash_blobstore.exists?(resource['sha1'])
+        end
+
+        json 200, response_payload
+      end
     end
   end
 end

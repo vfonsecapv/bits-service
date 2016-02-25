@@ -1,7 +1,17 @@
+1001:
+  name: MessageParseError
+  http_code: 400
+  message: "Request invalid due to parse error: %s"
+
 10000:
   name: NotFound
   http_code: 404
   message: "Unknown request"
+
+10008:
+  name: UnprocessableEntity
+  http_code: 422
+  message: "The request is semantically invalid: %s"
 
 160001:
   name: AppBitsUploadInvalid
