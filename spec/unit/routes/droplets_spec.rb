@@ -93,7 +93,7 @@ module BitsService
         it 'gets the uploaded filepath from the upload params decorator' do
           decorator = double(Helpers::Upload::Params)
           allow(Helpers::Upload::Params).to receive(:new).and_return(decorator)
-          expect(decorator).to receive(:upload_filepath).with('droplets').once
+          expect(decorator).to receive(:upload_filepath).with('droplet').once
           post '/droplets', upload_body, headers
         end
 

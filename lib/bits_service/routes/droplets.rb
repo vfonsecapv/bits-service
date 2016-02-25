@@ -5,7 +5,7 @@ module BitsService
     class Droplets < Base
       post '/droplets' do
         begin
-          uploaded_filepath = upload_params.upload_filepath('droplets')
+          uploaded_filepath = upload_params.upload_filepath('droplet')
           fail Errors::ApiError.new_from_details('DropletUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
 
           guid = SecureRandom.uuid
