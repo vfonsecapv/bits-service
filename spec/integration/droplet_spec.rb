@@ -88,4 +88,33 @@ describe 'droplet resource', type: :integration do
       end
     end
   end
+
+  describe 'GET /droplets/:guid' do
+    context 'when the droplet exists' do
+      it 'returns HTTP status code 200' do
+        response = make_get_request(resource_path)
+        expect(response.code).to eq 200
+      end
+
+      it 'returns the correct bits' do
+        response = make_get_request(resource_path)
+        expect(response.body).to eq(File.open(zip_filepath, 'rb').read)
+      end
+    end
+
+    context 'when the droplets does not exist' do
+      let(:resource_path) { '/droplets/not-existing' }
+
+      it 'returns HTTP status code 404' do
+        response = make_get_request(resource_path)
+        expect(response.code).to eq 404
+      end
+
+      it 'returns the expected error description' do
+        response = make_get_request(resource_path)
+        description = JSON.parse(response.body)['description']
+        expect(description).to eq 'Unknown request'
+      end
+    end
+  end
 end

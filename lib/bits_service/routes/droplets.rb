@@ -15,6 +15,21 @@ module BitsService
           FileUtils.rm_f(uploaded_filepath) if uploaded_filepath
         end
       end
+
+      get '/droplets/:guid' do |guid|
+        blob = droplet_blobstore.blob(guid)
+        fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
+
+        if droplet_blobstore.local?
+          if use_nginx?
+            return [200, { 'X-Accel-Redirect' => blob.download_url }, nil]
+          else
+            return send_file blob.local_path
+          end
+        else
+          return [302, { 'Location' => blob.download_url }, nil]
+        end
+      end
     end
   end
 end
