@@ -191,5 +191,187 @@ module BitsService
         end
       end
     end
+
+    describe 'POST /app_stash/bundles' do
+      let(:request_body) { [].to_json }
+      let(:headers) { { content_type: :json } }
+      let(:resources) { [{ 'fn' => 'app.rb', 'sha1' => 'existing' }, { 'fn' => 'lib.rb', 'sha1' => 'existing' }] }
+      let(:output_file) { double(:output_file) }
+
+      let(:destination_dir) { 'mock_destination_dir' }
+      let(:zip_dir) { 'mock_zip_dir' }
+      let(:zip_path) { File.join(zip_dir, 'bundle.zip') }
+
+      before(:each) do
+        allow(JSON).to receive(:parse).and_return(resources)
+        allow(blobstore).to receive(:exists?).with('existing').and_return(true)
+        allow(blobstore).to receive(:exists?).with('non-existing').and_return(false)
+        allow(blobstore).to receive(:download_from_blobstore)
+        allow(SafeZipper).to receive(:zip)
+        allow(Dir).to receive(:mktmpdir).and_return(destination_dir, zip_dir)
+        allow(File).to receive(:open).with(zip_path).and_return(output_file)
+        allow(FileUtils).to receive(:rm_rf)
+        allow(output_file).to receive(:read).and_return('')
+      end
+
+      it 'checks if each resource exists in the blobstore' do
+        expect(blobstore).to receive(:exists?).with('existing').twice
+        post '/app_stash/bundles', request_body, headers
+      end
+
+      it 'downloads each resource from the blobstore' do
+        expect(blobstore).to receive(:download_from_blobstore).with('existing', anything).twice
+        post '/app_stash/bundles', request_body, headers
+      end
+
+      it 'zips the download directory' do
+        expect(SafeZipper).to receive(:zip).with(destination_dir, zip_path)
+        post '/app_stash/bundles', request_body, headers
+      end
+
+      it 'returns HTTP status 200' do
+        post '/app_stash/bundles', request_body, headers
+        expect(last_response.status).to eq(200)
+      end
+
+      it 'deletes the download temporary folder' do
+        expect(FileUtils).to receive(:rm_rf).with(destination_dir)
+        post '/app_stash/bundles', request_body, headers
+      end
+
+      it 'deletes created zip file' do
+        expect(FileUtils).to receive(:rm_rf).with(zip_path)
+        post '/app_stash/bundles', request_body, headers
+      end
+
+      it 'returns the file' do
+        allow(output_file).to receive(:read).and_return('OK')
+        post '/app_stash/bundles', request_body, headers
+        expect(last_response.body).to eq('OK')
+      end
+
+      context 'when the payload is not an array' do
+        before do
+          allow(resources).to receive(:is_a?).with(Array).and_return(false)
+        end
+
+        it 'returns HTTP status 422' do
+          post '/app_stash/bundles', request_body, headers
+          expect(last_response.status).to eq(422)
+        end
+
+        it 'returns a corresponding error' do
+          post '/app_stash/bundles', request_body, headers
+
+          allow(JSON).to receive(:parse).and_call_original
+          description = JSON.parse(last_response.body)['description']
+
+          expect(description).to match(/The request is semantically invalid:/)
+        end
+      end
+
+      context 'when the request is an empty list' do
+        let(:resources) { [] }
+
+        it 'returns HTTP status 422' do
+          post '/app_stash/bundles', request_body, headers
+          expect(last_response.status).to eq(422)
+        end
+
+        it 'returns a corresponding error' do
+          post '/app_stash/bundles', request_body, headers
+
+          allow(JSON).to receive(:parse).and_call_original
+          description = JSON.parse(last_response.body)['description']
+
+          expect(description).to match(/The request is semantically invalid:/)
+        end
+      end
+
+      context 'when a request entry is missing the sha1 key' do
+        let(:resources) { [{ 'fn' => 'existing' }, { 'fn' => 'lib.rb', 'sha1' => 'existing' }] }
+
+        it 'returns HTTP status 422' do
+          post '/app_stash/bundles', request_body, headers
+          expect(last_response.status).to eq(422)
+        end
+
+        it 'returns a corresponding error' do
+          post '/app_stash/bundles', request_body, headers
+
+          allow(JSON).to receive(:parse).and_call_original
+          description = JSON.parse(last_response.body)['description']
+
+          expect(description).to match(/The request is semantically invalid:/)
+        end
+      end
+
+      context 'when a request entry is missing the fn key' do
+        let(:resources) { [{ 'sha1' => 'existing' }, { 'fn' => 'lib.rb', 'sha1' => 'existing' }] }
+
+        it 'returns HTTP status 422' do
+          post '/app_stash/bundles', request_body, headers
+          expect(last_response.status).to eq(422)
+        end
+
+        it 'returns a corresponding error' do
+          post '/app_stash/bundles', request_body, headers
+
+          allow(JSON).to receive(:parse).and_call_original
+          description = JSON.parse(last_response.body)['description']
+
+          expect(description).to match(/The request is semantically invalid:/)
+        end
+      end
+
+      context 'when the blobstore cannot find a requested sha1' do
+        let(:resources) { [{ 'fn' => 'app.rb', 'sha1' => 'existing' }, { 'fn' => 'lib.rb', 'sha1' => 'non-existing' }] }
+
+        it 'returns HTTP status 404' do
+          post '/app_stash/bundles', request_body, headers
+          expect(last_response.status).to eq(404)
+        end
+
+        it 'returns a corresponding error' do
+          post '/app_stash/bundles', request_body, headers
+
+          allow(JSON).to receive(:parse).and_call_original
+          description = JSON.parse(last_response.body)['description']
+
+          expect(description).to match(/non-existing not found/)
+        end
+      end
+
+      context 'when the parsing the request body fails' do
+        before(:each) do
+          allow(JSON).to receive(:parse).and_raise(JSON::ParserError.new('failed here'))
+        end
+
+        it 'returns HTTP status 400' do
+          post '/app_stash/bundles', request_body, headers
+          expect(last_response.status).to eq(400)
+        end
+
+        it 'returns a corresponding error' do
+          post '/app_stash/bundles', request_body, headers
+
+          allow(JSON).to receive(:parse).and_call_original
+          description = JSON.parse(last_response.body)['description']
+
+          expect(description).to match(/Request invalid due to parse error:/)
+        end
+      end
+
+      context 'when the blobstore call fails' do
+        before(:each) do
+          allow(blobstore).to receive(:download_from_blobstore).and_raise(StandardError.new('failed here'))
+        end
+
+        it 'return HTTP status 500' do
+          post '/app_stash/bundles', request_body, headers
+          expect(last_response.status).to eq(500)
+        end
+      end
+    end
   end
 end

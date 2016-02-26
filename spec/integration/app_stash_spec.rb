@@ -31,6 +31,8 @@ describe 'app_stash endpoint', type: :integration do
   end
 
   let(:zip_filepath) { File.expand_path('../../fixtures/integration/app.zip', __FILE__) }
+  let(:app_rb_sha) { '8b381f8864b572841a26266791c64ae97738a659' }
+  let(:lib_rb_sha) { '594eb15515c89bbfb0874aa4fd4128bee0a1d0b5' }
 
   describe 'POST /app_stash/entries' do
     let(:request_body) { { application: File.new(zip_filepath) } }
@@ -43,10 +45,10 @@ describe 'app_stash endpoint', type: :integration do
     it 'stores all the files from the zip based in their SHAs' do
       make_post_request('/app_stash/entries', request_body)
 
-      app_rb = blob_path(@root_dir, 'app_stash', '8b381f8864b572841a26266791c64ae97738a659')
+      app_rb = blob_path(@root_dir, 'app_stash', app_rb_sha)
       expect(File.exist?(app_rb)).to eq(true)
 
-      lib_rb = blob_path(@root_dir, 'app_stash', '594eb15515c89bbfb0874aa4fd4128bee0a1d0b5')
+      lib_rb = blob_path(@root_dir, 'app_stash', lib_rb_sha)
       expect(File.exist?(lib_rb)).to eq(true)
     end
 
@@ -84,10 +86,7 @@ describe 'app_stash endpoint', type: :integration do
   describe 'POST /app_stash/matches' do
     subject(:response) { make_post_request('/app_stash/matches', request_body, content_type: :json) }
 
-    let(:existing_shas) do
-      ['8b381f8864b572841a26266791c64ae97738a659', '594eb15515c89bbfb0874aa4fd4128bee0a1d0b5']
-    end
-
+    let(:existing_shas) { [app_rb_sha, lib_rb_sha] }
     let(:non_existing_shas) do
       ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb']
     end
@@ -190,6 +189,195 @@ describe 'app_stash endpoint', type: :integration do
         payload = JSON.parse(response.body)
         expect(payload).to be_a(Array)
         expect(payload).to be_empty
+      end
+    end
+  end
+
+  describe 'POST /app_stash/bundles' do
+    subject(:response) { make_post_request('/app_stash/bundles', request_body) }
+
+    let(:existing_resources) do
+      [
+        { 'sha1' => app_rb_sha, 'fn' => 'app/app.rb' },
+        { 'sha1' => lib_rb_sha, 'fn' => 'app/lib.rb' },
+      ]
+    end
+
+    let(:nonexisting_resources) do
+      [
+        { 'sha1' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'fn' => 'app/not-there' },
+      ]
+    end
+
+    let(:request_body) { resources.to_json }
+
+    let(:zip_filepath) { File.expand_path('../../fixtures/integration/app.zip', __FILE__) }
+
+    let(:zip_file_sha1) { BitsService::Digester.new.digest_path(zip_filepath) }
+
+    before(:each) do
+      request_body = { application: File.new(zip_filepath) }
+      make_post_request('/app_stash/entries', request_body)
+    end
+
+    def count_files_in_dir(dir)
+      Dir[File.join(dir, '**', '*')].count { |file| File.file?(file) }
+    end
+
+    def write_response_body_to_file(response)
+      Tempfile.new('zipfile').tap do |zip|
+        zip.write(response.body)
+        zip.close
+      end
+    end
+
+    shared_examples 'bundles endpoint' do
+      it 'returns HTTP status 200' do
+        expect(response.code).to eq(200)
+      end
+
+      it 'returns an application package' do
+        zip = write_response_body_to_file(response)
+        unzip_path = Dir.mktmpdir('unzip')
+
+        BitsService::SafeZipper.unzip!(zip.path, unzip_path)
+
+        unzipped_files = Dir[File.join(unzip_path, '**', '*')].reject { |f| File.directory?(f) }.sort
+        expected_files = resources.map { |spec| File.join(unzip_path, spec[:fn]) }.sort
+        expect(unzipped_files).to eq(expected_files)
+
+        resources.each do |spec|
+          unzipped_file_path = File.join(unzip_path, spec[:fn])
+          expect(BitsService::Digester.new.digest_path(unzipped_file_path)).to eq(spec[:sha1])
+        end
+
+        expect(count_files_in_dir(unzip_path)).to eq(resources.size)
+      end
+    end
+
+    context 'a single file' do
+      let(:resources) do
+        [
+          { fn: 'init.rb', sha1: app_rb_sha }
+        ]
+      end
+
+      it_behaves_like 'bundles endpoint'
+    end
+
+    context 'multiple files' do
+      let(:resources) do
+        [
+          { fn: 'init.rb', sha1: app_rb_sha },
+          { fn: 'lib.rb', sha1: lib_rb_sha },
+          { fn: 'another_one.rb', sha1: lib_rb_sha }
+        ]
+      end
+
+      it_behaves_like 'bundles endpoint'
+    end
+
+    context 'folders and subfolders' do
+      let(:resources) do
+        [
+          { fn: 'init.rb', sha1: app_rb_sha },
+          { fn: 'some-folder/lib.rb', sha1: lib_rb_sha },
+          { fn: 'another-folder/inside/another_one.rb', sha1: lib_rb_sha },
+          { fn: 'some-folder/subfolder/app.rb', sha1: app_rb_sha }
+        ]
+      end
+
+      it_behaves_like 'bundles endpoint'
+    end
+
+    context 'when the request is for non-existing resources' do
+      let(:request_body) { (existing_resources + nonexisting_resources).to_json }
+
+      it 'returns HTTP status 404' do
+        expect(response.code).to eq(404)
+      end
+
+      it 'returns a corresponding error' do
+        description = JSON.parse(response.body)['description']
+        expect(description).to eq('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa not found')
+      end
+    end
+
+    context 'when the request body is empty' do
+      let(:request_body) { nil }
+
+      it 'returns HTTP status 400' do
+        expect(response.code).to eq(400)
+      end
+
+      it 'returns a corresponding error' do
+        description = JSON.parse(response.body)['description']
+        expect(description).to match(/Request invalid due to parse error/)
+      end
+    end
+
+    context 'when the request body is invalid json' do
+      let(:request_body) { 'invalid' }
+
+      it 'returns HTTP status 400' do
+        expect(response.code).to eq(400)
+      end
+
+      it 'returns a corresponding error' do
+        description = JSON.parse(response.body)['description']
+        expect(description).to match(/Request invalid due to parse error/)
+      end
+    end
+
+    context 'when the json in the request is not an array' do
+      let(:request_body) { '{}' }
+
+      it 'returns HTTP status 422' do
+        expect(response.code).to eq(422)
+      end
+
+      it 'returns a corresponding error' do
+        description = JSON.parse(response.body)['description']
+        expect(description).to match(/The request is semantically invalid: must be a non-empty array/)
+      end
+    end
+
+    context 'when the json in the request is an empty array' do
+      let(:request_body) { '[]' }
+
+      it 'returns HTTP status 422' do
+        expect(response.code).to eq(422)
+      end
+
+      it 'returns a corresponding error' do
+        description = JSON.parse(response.body)['description']
+        expect(description).to match(/The request is semantically invalid: must be a non-empty array/)
+      end
+    end
+
+    context 'when the json in the request contains a resource without a SHA' do
+      let(:request_body) { '[{"fn":"/app/lib.rb"}]' }
+
+      it 'returns HTTP status 422' do
+        expect(response.code).to eq(422)
+      end
+
+      it 'returns a corresponding error' do
+        description = JSON.parse(response.body)['description']
+        expect(description).to match(/The request is semantically invalid: key `sha1` missing or empty/)
+      end
+    end
+
+    context 'when the json in the request contains a resource without a file path' do
+      let(:request_body) { '[{"sha1":"zyzfh"}]' }
+
+      it 'returns HTTP status 422' do
+        expect(response.code).to eq(422)
+      end
+
+      it 'returns a corresponding error' do
+        description = JSON.parse(response.body)['description']
+        expect(description).to match(/The request is semantically invalid: key `fn` missing or empty/)
       end
     end
   end
