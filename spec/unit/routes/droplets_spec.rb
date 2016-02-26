@@ -280,6 +280,44 @@ module BitsService
           end
         end
       end
+
+      describe 'DELETE /droplets/:guid' do
+        let(:blob) do
+          double(BitsService::Blobstore::Blob)
+        end
+
+        let(:blobstore) do
+          double(BitsService::Blobstore::Client, blob: blob)
+        end
+
+        before(:each) do
+          allow_any_instance_of(Routes::Droplets).to receive(:droplet_blobstore).and_return(blobstore)
+          allow(blobstore).to receive(:delete_blob).and_return(true)
+        end
+
+        it 'returns HTTP status code 204' do
+          delete "/droplets/#{guid}", headers
+          expect(last_response.status).to eq(204)
+        end
+
+        it 'deletes the blob using the blobstore client' do
+          expect(blobstore).to receive(:delete_blob).with(blob)
+          delete "/droplets/#{guid}", headers
+        end
+
+        context 'when the buildpack does not exist' do
+          let(:blob) { nil }
+
+          it 'returns a corresponding error' do
+            delete "/droplets/#{guid}", headers
+
+            expect(last_response.status).to eq(404)
+            json = MultiJson.load(last_response.body)
+            expect(json['code']).to eq(10_000)
+            expect(json['description']).to match(/Unknown request/)
+          end
+        end
+      end
     end
   end
 end

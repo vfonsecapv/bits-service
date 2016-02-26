@@ -30,6 +30,13 @@ module BitsService
           return [302, { 'Location' => blob.download_url }, nil]
         end
       end
+
+      delete '/droplets/:guid' do |guid|
+        blob = droplet_blobstore.blob(guid)
+        fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
+        droplet_blobstore.delete_blob(blob)
+        status 204
+      end
     end
   end
 end
