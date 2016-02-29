@@ -2,7 +2,15 @@ module IntegrationSetup
   def start_server(config={})
     @config_filepath = create_config_file(config)
     @pid = run_cmd("RACK_ENV=production BITS_CONFIG_FILE=#{@config_filepath} rackup")
-    sleep 2
+
+    (1..10).each do |attempt|
+      begin
+        make_get_request('/')
+      rescue
+        raise "Giving up starting http server after #{attempt} attempts" if attempt == 10
+        sleep 0.5
+      end
+    end
   end
 
   def stop_server
