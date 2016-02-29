@@ -1,3 +1,5 @@
+require_relative '../errors/api_error'
+
 module BitsService
   module Routes
     class Base < Sinatra::Application
