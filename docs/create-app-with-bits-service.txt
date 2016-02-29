@@ -2,31 +2,35 @@ title Create App with Bits-Service
 
 cf->CC: PUT /v2/apps/:guid
 CC-->cf: 201
-cf->CC: PUT /v2/resource_match [known file SHAs]
+cf->CC: PUT /v2/resource_match [JSON of known file SHAs]
 
-loop existing files
-  CC->Bits-Service: HEAD file
-  Bits-Service->Blobstore: HEAD file
-  Blobstore-->Bits-Service:
-  Bits-Service-->CC:
+CC->Bits-Service: POST /app_stash/matches [JSON of known file SHAs]
+loop each SHA
+    Bits-Service->Blobstore: HEAD file
+    Blobstore-->Bits-Service:
 end
+Bits-Service-->CC:
 
 CC-->cf: files to upload
-cf->cf: create ZIP
-cf->CC: POST /v2/apps/:guid/bits
+cf->cf: create ZIP with missing bits
+cf->CC: POST /v2/apps/:guid/bits [zip file + SHAs known to CC]
+
+CC->Bits-Service: POST /app_stash/entries [zip file]
+Bits-Service->Bits-Service: unzip
+loop unzipped files
+    Bits-Service->Blobstore: store
+    Blobstore-->Bits-Service:
+end
+Bits-Service-->CC: [SHAs of files from zip]
+
+CC->CC: Collect list of _all_ SHAs
+
+CC->Bits-Service: POST /app_stash/bundle [all SHAs]
 
 loop existing files
-  CC->Bits-Service: fetch file
   Bits-Service->Blobstore: fetch file
   Blobstore-->Bits-Service: file
-  Bits-Service-->CC: file
 end
 
-loop new files
-  CC->Bits-Service: store file
-  Bits-Service->Blobstore: store file
-  Blobstore-->Bits-Service:
-  Bits-Service-->CC:
-end
-
-CC->CC: Assemble package
+Bits-Service->Bits-Service: assemble package
+Bits-Service-->CC: [package]
