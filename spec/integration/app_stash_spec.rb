@@ -52,6 +52,18 @@ describe 'app_stash endpoint', type: :integration do
       expect(File.exist?(lib_rb)).to eq(true)
     end
 
+    it 'returns a list of SHAs for all files received' do
+      response = make_post_request('/app_stash/entries', request_body)
+      response_body = response.body
+      expect(response_body).to_not be_empty
+      json = JSON.parse(response_body)
+      expect(json).to_not be_empty
+      expect(json.size).to eq(2)
+
+      expect(json).to include({ 'fn' => 'app/app.rb', 'sha1' => app_rb_sha })
+      expect(json).to include({ 'fn' => 'app/lib.rb', 'sha1' => lib_rb_sha })
+    end
+
     context 'when the file is not a valid zip' do
       let(:zip_filepath) { File.expand_path('../../fixtures/integration/invalid.zip', __FILE__) }
 

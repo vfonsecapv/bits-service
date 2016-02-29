@@ -11,16 +11,18 @@ module BitsService
           'missing key `application`') unless uploaded_filepath
 
         destination_path = Dir.mktmpdir('app_stash')
+
         begin
           SafeZipper.unzip!(uploaded_filepath, destination_path)
           app_stash_blobstore.cp_r_to_blobstore(destination_path)
+          receipt = Receipt.new(destination_path)
+
+          json 201, receipt.contents
         rescue SafeZipper::Error => e
           fail Errors::ApiError.new_from_details('AppBitsUploadInvalid', e.message)
         ensure
           FileUtils.rm_r(destination_path)
         end
-
-        status 201
       end
 
       post '/app_stash/matches' do

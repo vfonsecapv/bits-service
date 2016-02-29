@@ -12,6 +12,7 @@ module BitsService
       let(:tmp_dir) { '/path/to/tmp/dir' }
       let(:zip_filepath) { '/path/to/zip/file' }
       let(:request_body) { { application: 'something' } }
+      let(:receipt_contents) { [{ 'fn' => 'foo', 'sha1' => '1234' }] }
 
       before do
         allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
@@ -19,11 +20,22 @@ module BitsService
         allow(SafeZipper).to receive(:unzip!)
         allow(blobstore).to receive(:cp_r_to_blobstore)
         allow(FileUtils).to receive(:rm_r)
+        allow_any_instance_of(Receipt).to receive(:contents).and_return(receipt_contents)
       end
 
       it 'returns HTTP status 201' do
         post '/app_stash/entries', request_body, headers
         expect(last_response.status).to eq(201)
+      end
+
+      it 'returns a list of SHAs' do
+        post '/app_stash/entries', request_body, headers
+        response_body = last_response.body
+        expect(response_body).to_not be_empty
+
+        json = JSON.parse(last_response.body)
+        expect(json).to_not be_empty
+        expect(json).to eq(receipt_contents)
       end
 
       it 'unzips the uploaded zip file' do
@@ -100,6 +112,17 @@ module BitsService
         it 'removes the temporary folder' do
           expect(FileUtils).to receive(:rm_r).with(tmp_dir)
           post '/app_stash/entries', request_body, headers
+        end
+      end
+
+      context 'when Receipt raises an error' do
+        before do
+          allow_any_instance_of(Receipt).to receive(:contents).and_raise(StandardError.new('failed here'))
+        end
+
+        it 'return HTTP status 500' do
+          post '/app_stash/entries', request_body, headers
+          expect(last_response.status).to eq(500)
         end
       end
     end

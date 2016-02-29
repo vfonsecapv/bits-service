@@ -8,7 +8,7 @@ require 'timecop'
 require 'webmock/rspec'
 
 require 'pry'
-require 'pry-nav'
+require 'pry-byebug'
 
 Dir[File.expand_path('support/**/*.rb', File.dirname(__FILE__))].each { |file| require file }
 
