@@ -336,9 +336,23 @@ See *Start Application*.
 
 See *Start Application*.
 
+In Addition there is a download for droplets in the apps controller.
+
+```
+GET /v2/apps/:app-guid/droplet/download
+```
+
 #### Delete
 
 See *Start Application*.
+
+### Additional Endpoints
+
+A list of additional endpoints which provide bits handling or are directly related to bits handling but not covered in the flows above.
+#### Buildpacks
+
+`GET /internal/buildpacks` provides a list of all buildpacks. DEAs use this endpoint to discover available buildpacks.
+
 
 ## Blob Store Organization
 
