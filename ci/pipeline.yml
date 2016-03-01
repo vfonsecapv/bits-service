@@ -390,14 +390,17 @@ jobs:
         BOSH_TARGET: {{bosh-target}}
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
+  - task: create-colocated-cf-manifest
+    file: git-bits-service-release/ci/tasks/create-colocated-cf-manifest.yml
   - task: turn-BITS-flag-ON
     file: git-bits-service-release/ci/tasks/deploy-release.yml
     config:
       inputs:
         - name: git-bits-service-release
         - name: bits-service-release-version
+        - name: manifests
       params:
-        MANIFEST_PATH: ../git-bits-service-release/ci/manifests/cf-with-flag.yml
+        MANIFEST_PATH: ../manifests/manifest.yml
         BOSH_TARGET: {{bosh-target}}
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
