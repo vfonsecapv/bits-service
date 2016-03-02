@@ -45,3 +45,37 @@ ip route add 10.250.0.0/16 via 192.168.50.4
 vagrant ssh  #(into bosh lite)
 ip route add 10.155.248.0/24 via 192.168.50.1 dev eth1
 ```
+
+# Update bosh-lite
+
+In order to update bosh-lite or re-create the vagrant vm do:
+
+```
+cd workspace/bosh-lite
+vagrant destroy
+git pull
+vagrant box Update
+vim Vagrantfile
+```
+
+In the Vagrantfile add the `v.cpus = 7`:
+
+```
+Vagrant.configure('2') do |config|
+  config.vm.box = 'cloudfoundry/bosh-lite'
+
+  config.vm.provider :virtualbox do |v, override|
+    override.vm.box_version = '9000.94.0' # ci:replace
+    v.cpus = 7  # <------------------------------------------------- add this line
+    # To use a different IP address for the bosh-lite director, uncomment this line:
+    # override.vm.network :private_network, ip: '192.168.59.4', id: :local
+  end
+  ...
+```
+
+Start bosh-lite and create our users:
+
+```
+vagrant up
+bosh create user <user>
+```
