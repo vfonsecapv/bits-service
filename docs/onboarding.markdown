@@ -32,9 +32,11 @@
 
 # Concourse
 
+Our pipeline is public at [flintstone.ci.cf-app.com](https://flintstone.ci.cf-app.com).
+
 ```
 # name the target 'flintstone' and login
-fly --target flintstone login --concourse-url 'http://10.155.248.166:8080'
+fly --target flintstone login --concourse-url https://flintstone.ci.cf-app.com
 
 # if the auth expired, re-login using the previously named target
 fly -t flintstone login
