@@ -75,6 +75,74 @@ module BitsService
           end
         end
       end
+      describe 'GET /packages/:guid' do
+        let(:request_body) { {} }
+        let(:package_response) { {}  }
+
+        before do
+          allow(blobstore).to receive(:exists?).and_return(true)
+          temp_file = Tempfile.new('test_file')
+          temp_file.write('Test Content')
+          temp_file.close
+          allow(Tempfile).to receive(:new).and_return(temp_file)
+          allow(blobstore).to receive(:download_from_blobstore)
+          allow(blobstore).to receive(:local?).and_return(true)
+        end
+        context 'Without Nginx' do
+          it 'returns HTTP status 200' do
+            get '/packages/valid_guid', request_body, headers
+            expect(last_response.status).to eq(200)
+          end
+
+          it 'returns a valid file' do
+            get '/packages/valid_guid', request_body, headers
+            expect(last_response.body).to eq 'Test Content'
+          end
+        end
+        context 'With Nginx' do
+          before do
+            allow_any_instance_of(Packages).to receive(:use_nginx?).and_return(true)
+            allow(blobstore).to receive(:download_uri).and_return('/valid/path/to/file')
+          end
+
+          it 'returns HTTP status 200' do
+            get '/packages/valid_guid', request_body, headers
+            expect(last_response.status).to eq(200)
+          end
+
+          it 'returns a valid header pointing to the file' do
+            get '/packages/valid_guid', request_body, headers
+            expect(last_response.headers['X-Accel-Redirect']).to eq '/valid/path/to/file'
+          end
+        end
+        context 'Blobstore is not local' do
+          before do
+            allow(blobstore).to receive(:download_uri).and_return('/valid/path/to/file')
+            allow(blobstore).to receive(:local?).and_return(false)
+          end
+
+          it 'returns HTTP status 302' do
+            get '/packages/valid_guid', request_body, headers
+            expect(last_response.status).to eq(302)
+          end
+
+          it 'returns valid header pointing to the file' do
+            get '/packages/valid_guid', request_body, headers
+            expect(last_response.headers['Location']).to eq('/valid/path/to/file')
+          end
+        end
+
+        context 'when package is not there' do
+          before do
+            allow(blobstore).to receive(:exists?).and_return(false)
+          end
+
+          it 'returns 404' do
+            get '/packages/valid_guid', request_body, headers
+            expect(last_response.status).to eq(404)
+          end
+        end
+      end
     end
   end
 end
