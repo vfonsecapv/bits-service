@@ -13,6 +13,10 @@ module BitsService
         @app_stash_blobstore ||= create_client(:app_stash)
       end
 
+      def packages_blobstore
+        @packages_blobstore ||= create_client(:packages)
+      end
+
       private
 
       def create_client(key)

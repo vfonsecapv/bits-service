@@ -32,3 +32,8 @@
   name: DropletUploadInvalid
   http_code: 400
   message: "The droplet upload is invalid: %s"
+
+290004:
+  name: PackageUploadInvalid
+  http_code: 400
+  message: "The package upload is invalid: %s"
