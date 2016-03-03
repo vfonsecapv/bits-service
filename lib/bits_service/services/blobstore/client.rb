@@ -200,7 +200,7 @@ module BitsService
 
       def partitioned_key(key)
         key = key.to_s.downcase
-        key = File.join(key[0..1], key[2..3], key)
+        key = File.join(key[0..1].to_s, key[2..3].to_s, key)
         if @root_dir
           key = File.join(@root_dir, key)
         end

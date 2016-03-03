@@ -151,6 +151,14 @@ describe 'app_stash endpoint', type: :integration do
       end
     end
 
+    context 'when the request includes invalid SHAs' do
+      let(:request_body) { [{ sha1: '0', size: 0 }].to_json }
+
+      it 'returns HTTP status 200' do
+        expect(response.code).to eq(200)
+      end
+    end
+
     context 'when the body is empty' do
       let(:request_body) { nil }
 

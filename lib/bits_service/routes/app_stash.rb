@@ -27,7 +27,7 @@ module BitsService
 
       post '/app_stash/matches' do
         response_payload = request_payload.select do |resource|
-          resource.key?('sha1') && app_stash_blobstore.exists?(resource['sha1'])
+          valid_sha?(resource['sha1']) && app_stash_blobstore.exists?(resource['sha1'])
         end
 
         json 200, response_payload
@@ -59,6 +59,10 @@ module BitsService
       end
 
       private
+
+      def valid_sha?(sha)
+        sha.to_s.length == 40
+      end
 
       def request_payload
         return @request_payload if @request_payload

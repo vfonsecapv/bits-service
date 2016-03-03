@@ -130,12 +130,12 @@ module BitsService
     describe 'POST /app_stash/matches' do
       let(:request_body) { [].to_json }
       let(:headers) { { content_type: :json } }
-      let(:resources) { [{ 'sha1' => 'existing' }, { 'sha1' => 'non-existing' }] }
+      let(:resources) { [{ 'sha1' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }, { 'sha1' => 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz' }] }
 
       before(:each) do
         allow(JSON).to receive(:parse).and_return(resources)
-        allow(blobstore).to receive(:exists?).with('existing').and_return(true)
-        allow(blobstore).to receive(:exists?).with('non-existing').and_return(false)
+        allow(blobstore).to receive(:exists?).with('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa').and_return(true)
+        allow(blobstore).to receive(:exists?).with('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz').and_return(false)
       end
 
       it 'returns HTTP status 200' do
@@ -148,7 +148,7 @@ module BitsService
 
         allow(JSON).to receive(:parse).and_call_original
         payload = JSON.parse(last_response.body)
-        expect(payload).to eq([{ 'sha1' => 'existing' }])
+        expect(payload).to eq([{ 'sha1' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }])
       end
 
       it 'makes sure the request payload is an Array' do
@@ -156,9 +156,14 @@ module BitsService
         post '/app_stash/matches', request_body, headers
       end
 
-      it 'checks whether for all resources if they exists in the blobstore' do
-        expect(blobstore).to receive(:exists?).with('existing')
-        expect(blobstore).to receive(:exists?).with('non-existing')
+      it 'validates all SHAs' do
+        expect_any_instance_of(Routes::AppStash).to receive(:valid_sha?).exactly(resources.length).times
+        post '/app_stash/matches', request_body, headers
+      end
+
+      it 'checks for all resources if they exists in the blobstore' do
+        expect(blobstore).to receive(:exists?).with('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        expect(blobstore).to receive(:exists?).with('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz')
 
         post '/app_stash/matches', request_body, headers
       end

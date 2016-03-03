@@ -611,6 +611,22 @@ module BitsService
           end
         end
 
+        describe '#partitioned_key' do
+          class DummyClient < Client
+            def public_pk(key)
+              partitioned_key(key)
+            end
+          end
+
+          context 'when the key is less than 4 characters' do
+            it 'does not raise exeception' do
+              expect {
+                DummyClient.new('', '').public_pk('0')
+              }.to_not raise_error
+            end
+          end
+        end
+
         describe '#delete_all' do
           let(:connection_config) { { provider: 'Local', local_root: local_dir } }
 
