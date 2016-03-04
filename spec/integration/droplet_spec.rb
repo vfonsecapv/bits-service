@@ -50,13 +50,7 @@ describe 'droplet resource', type: :integration do
   end
 
   def blobstore_path(guid)
-    File.join(
-      @root_dir,
-      'directory-key',
-      guid[0..1],
-      guid[2..3],
-      guid
-    )
+    blob_path(@root_dir, 'directory-key', guid)
   end
 
   describe 'POST /droplets' do

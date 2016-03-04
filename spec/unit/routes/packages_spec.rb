@@ -75,6 +75,87 @@ module BitsService
           end
         end
       end
+
+      describe 'GET /packages' do
+        let(:guid) { SecureRandom.uuid }
+        let(:blob) { double(:blob) }
+        let(:package_file) do
+          Tempfile.new('package').tap do |file|
+            file.write('content!')
+            file.close
+          end
+        end
+        subject(:response) { get "/packages/#{guid}" }
+
+        before do
+          allow(blobstore).to receive(:blob).and_return(blob)
+          allow(blobstore).to receive(:local?).and_return(true)
+          allow_any_instance_of(Packages).to receive(:use_nginx?).and_return(false)
+          allow(blob).to receive(:local_path).and_return(package_file.path)
+        end
+
+        it 'returns HTTP status 200' do
+          expect(response.status).to eq(200)
+        end
+
+        it 'returns the blob contents' do
+          expect(response.body).to eq(File.read(package_file.path))
+        end
+
+        context 'when blobstore is not local' do
+          let(:download_url) { 'http://blobstore.com/someblob' }
+
+          before do
+            allow(blobstore).to receive(:local?).and_return(false)
+            allow(blob).to receive(:download_url).and_return(download_url)
+          end
+
+          it 'returns HTTP status 302' do
+            expect(response.status).to eq(302)
+          end
+
+          it 'returns the blob url in the Location header' do
+            expect(response.headers['Location']).to eq(download_url)
+          end
+        end
+
+        context 'when the bits service is using NGINX' do
+          let(:download_url) { 'http://blobstore.com/someblob' }
+
+          before do
+            allow_any_instance_of(Packages).to receive(:use_nginx?).and_return(true)
+            allow(blob).to receive(:download_url).and_return(download_url)
+          end
+
+          it 'returns HTTP status 200' do
+            expect(response.status).to eq(200)
+          end
+
+          it 'returns the blob url in the X-Accel-Redirect header' do
+            expect(response.headers['X-Accel-Redirect']).to eq(download_url)
+          end
+        end
+
+        context 'when the blob is missing' do
+          before do
+            allow(blobstore).to receive(:blob).and_return(nil)
+          end
+
+          it 'returns HTTP status 404' do
+            expect(response.status).to eq(404)
+          end
+        end
+
+        context 'when fetching the blob object fails' do
+          before do
+            allow(blobstore).to receive(:blob).and_raise(StandardError)
+          end
+
+          it 'returns HTTP status 500' do
+            expect(response.status).to eq(500)
+          end
+        end
+      end
     end
   end
 end
