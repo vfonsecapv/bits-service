@@ -18,6 +18,8 @@ module BitsService
         Rack::Test::UploadedFile.new(File.new(zip_filepath))
       end
 
+      let(:zip_file_sha) { Digester.new.digest_path(zip_file) }
+
       let(:non_zip_file) do
         Rack::Test::UploadedFile.new(Tempfile.new('foo'))
       end
@@ -83,6 +85,8 @@ module BitsService
 
           json = MultiJson.load(last_response.body)
           expect(json['guid']).to eq(guid)
+          expect(json['digest']).to be
+          expect(json['digest']).to eq(zip_file_sha)
         end
 
         it 'instantiates the upload params decorator with the right arguments' do
@@ -101,6 +105,23 @@ module BitsService
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
           post '/droplets', upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
+        end
+
+        context 'when an empty file is being uploaded' do
+          let(:zip_filepath) do
+            path = File.join(Dir.mktmpdir, zip_filename)
+            TestZip.create(path, 1, 0)
+            path
+          end
+
+          it 'returns json with metadata about the upload' do
+            post '/droplets', upload_body, headers
+
+            json = MultiJson.load(last_response.body)
+            expect(json['guid']).to eq(guid)
+            expect(json['digest']).to be
+            expect(json['digest']).to eq(zip_file_sha)
+          end
         end
 
         context 'when no file is being uploaded' do
