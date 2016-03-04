@@ -26,6 +26,14 @@ module BitsService
 
         return send_file blob.local_path
       end
+
+      delete '/packages/:guid' do |guid|
+        blob = packages_blobstore.blob(guid)
+        fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
+
+        packages_blobstore.delete_blob(blob)
+        status 204
+      end
     end
   end
 end

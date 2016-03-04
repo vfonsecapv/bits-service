@@ -102,4 +102,38 @@ describe 'packages resource', type: :integration do
       end
     end
   end
+
+  describe 'DELETE /packages/:guid' do
+    context 'when the packages exists' do
+      it 'returns HTTP status code 204' do
+        response = make_delete_request(resource_path)
+        expect(response.code).to eq 204
+      end
+
+      it 'removes the stored file' do
+        expected_path = blob_path(@root_dir, 'packages', guid)
+
+        expect {
+          make_delete_request(resource_path)
+        }.to change {
+          File.exist?(expected_path)
+        }.from(true).to(false)
+      end
+    end
+
+    context 'when the droplets does not exist' do
+      let(:resource_path) { '/packages/not-existing' }
+
+      it 'returns HTTP status code 404' do
+        response = make_delete_request(resource_path)
+        expect(response.code).to eq 404
+      end
+
+      it 'returns the expected error description' do
+        response = make_delete_request(resource_path)
+        description = JSON.parse(response.body)['description']
+        expect(description).to eq 'Unknown request'
+      end
+    end
+  end
 end

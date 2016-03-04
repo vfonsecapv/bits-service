@@ -156,6 +156,64 @@ module BitsService
           end
         end
       end
+
+      describe 'DELETE /packages/:guid' do
+        let(:guid) { SecureRandom.uuid }
+        let(:blob) { double(:blob) }
+
+        before do
+          allow(blobstore).to receive(:blob).and_return(blob)
+          allow(blobstore).to receive(:delete_blob).and_return(blob)
+        end
+
+        it 'returns HTTP status 204' do
+          delete "/packages/#{guid}", {}
+          expect(last_response.status).to eq(204)
+        end
+
+        it 'uses the correct key to fetch the blob' do
+          expect(blobstore).to receive(:blob).with(guid)
+          delete "/packages/#{guid}", {}
+        end
+
+        it 'asks for the package to be deleted' do
+          expect(blobstore).to receive(:delete_blob).with(blob)
+          delete "/packages/#{guid}", {}
+        end
+
+        context 'when the package does not exist' do
+          before do
+            allow(blobstore).to receive(:blob).and_return(nil)
+          end
+
+          it 'returns HTTP status 404' do
+            delete "/packages/#{guid}", {}
+            expect(last_response.status).to eq(404)
+          end
+        end
+
+        context 'when blobstore lookup fails' do
+          before do
+            allow(blobstore).to receive(:blob).and_raise
+          end
+
+          it 'returns HTTP status 500' do
+            delete "/packages/#{guid}", {}
+            expect(last_response.status).to eq(500)
+          end
+        end
+
+        context 'when deleting the blob fails' do
+          before do
+            allow(blobstore).to receive(:delete_blob).and_raise
+          end
+
+          it 'returns HTTP status 500' do
+            delete "/packages/#{guid}", {}
+            expect(last_response.status).to eq(500)
+          end
+        end
+      end
     end
   end
 end
