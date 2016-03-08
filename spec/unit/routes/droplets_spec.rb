@@ -24,7 +24,7 @@ module BitsService
         Rack::Test::UploadedFile.new(Tempfile.new('foo'))
       end
 
-      let(:guid) { SecureRandom.uuid }
+      let(:guid) { zip_file_sha }
 
       let(:upload_body) { { droplet: zip_file, droplet_name: zip_filename } }
 
@@ -64,7 +64,6 @@ module BitsService
       describe 'POST /droplets' do
         before do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-          allow(SecureRandom).to receive(:uuid).and_return(guid)
         end
 
         it 'returns HTTP status 201' do
@@ -75,7 +74,7 @@ module BitsService
         it 'stores the uploaded file in the droplet blobstore using the correct key' do
           blobstore = double(BitsService::Blobstore::Client)
           expect_any_instance_of(Routes::Droplets).to receive(:droplet_blobstore).and_return(blobstore)
-          expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, guid)
+          expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, zip_file_sha)
 
           post '/droplets', upload_body, headers
         end
@@ -84,9 +83,7 @@ module BitsService
           post '/droplets', upload_body, headers
 
           json = MultiJson.load(last_response.body)
-          expect(json['guid']).to eq(guid)
-          expect(json['digest']).to be
-          expect(json['digest']).to eq(zip_file_sha)
+          expect(json['guid']).to eq(zip_file_sha)
         end
 
         it 'instantiates the upload params decorator with the right arguments' do
@@ -118,9 +115,7 @@ module BitsService
             post '/droplets', upload_body, headers
 
             json = MultiJson.load(last_response.body)
-            expect(json['guid']).to eq(guid)
-            expect(json['digest']).to be
-            expect(json['digest']).to eq(zip_file_sha)
+            expect(json['guid']).to eq(zip_file_sha)
           end
         end
 
