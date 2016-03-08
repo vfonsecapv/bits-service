@@ -84,7 +84,7 @@ module BitsService
         it 'returns json with metadata about the upload' do
           post '/buildpacks', upload_body, headers
 
-          json = MultiJson.load(last_response.body)
+          json = JSON.parse(last_response.body)
           expect(json['guid']).to eq(guid)
           expect(json['digest']).to eq(zip_file_sha)
         end
@@ -133,7 +133,7 @@ module BitsService
             post '/buildpacks', upload_body, headers
 
             expect(last_response.status).to eq(400)
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['code']).to eq(290_002)
             expect(json['description']).to match(/a filename must be specified/)
           end
@@ -150,7 +150,7 @@ module BitsService
             post '/buildpacks', upload_body, headers
 
             expect(last_response.status).to eq(400)
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['code']).to eq(290_002)
             expect(json['description']).to match(/a file must be provided/)
           end
@@ -164,7 +164,7 @@ module BitsService
             post '/buildpacks', upload_body, headers
 
             expect(last_response.status).to eql 400
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['code']).to eq(290_002)
             expect(json['description']).to match(/only zip files allowed/)
           end
@@ -333,7 +333,7 @@ module BitsService
             get "/buildpacks/#{guid}", headers
 
             expect(last_response.status).to eq(404)
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['code']).to eq(10_000)
             expect(json['description']).to match(/Unknown request/)
           end
@@ -371,7 +371,7 @@ module BitsService
             delete "/buildpacks/#{guid}", headers
 
             expect(last_response.status).to eq(404)
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['code']).to eq(10_000)
             expect(json['description']).to match(/Unknown request/)
           end

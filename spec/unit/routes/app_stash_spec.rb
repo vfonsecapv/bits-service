@@ -65,7 +65,7 @@ module BitsService
 
         it 'returns a corresponding error' do
           post '/app_stash/entries', request_body, headers
-          json = MultiJson.load(last_response.body)
+          json = JSON.parse(last_response.body)
           expect(json['code']).to eq(160001)
           expect(json['description']).to eq('The app upload is invalid: missing key `application`')
         end
@@ -88,7 +88,7 @@ module BitsService
 
         it 'returns a corresponding error' do
           post '/app_stash/entries', request_body, headers
-          json = MultiJson.load(last_response.body)
+          json = JSON.parse(last_response.body)
           expect(json['code']).to eq(160001)
           expect(json['description']).to eq('The app upload is invalid: failed here')
         end

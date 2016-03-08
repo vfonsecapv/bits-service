@@ -82,7 +82,7 @@ module BitsService
         it 'returns json with metadata about the upload' do
           post '/droplets', upload_body, headers
 
-          json = MultiJson.load(last_response.body)
+          json = JSON.parse(last_response.body)
           expect(json['guid']).to eq(zip_file_sha)
         end
 
@@ -114,7 +114,7 @@ module BitsService
           it 'returns json with metadata about the upload' do
             post '/droplets', upload_body, headers
 
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['guid']).to eq(zip_file_sha)
           end
         end
@@ -130,7 +130,7 @@ module BitsService
             post '/droplets', upload_body, headers
 
             expect(last_response.status).to eq(400)
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['code']).to eq(290_003)
             expect(json['description']).to match(/a file must be provided/)
           end
@@ -290,7 +290,7 @@ module BitsService
             get "/droplets/#{guid}", headers
 
             expect(last_response.status).to eq(404)
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['code']).to eq(10_000)
             expect(json['description']).to match(/Unknown request/)
           end
@@ -328,7 +328,7 @@ module BitsService
             delete "/droplets/#{guid}", headers
 
             expect(last_response.status).to eq(404)
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['code']).to eq(10_000)
             expect(json['description']).to match(/Unknown request/)
           end

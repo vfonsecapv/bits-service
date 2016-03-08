@@ -49,7 +49,7 @@ module BitsService
 
           it 'returns a corresponding error' do
             post '/packages', request_body, headers
-            json = MultiJson.load(last_response.body)
+            json = JSON.parse(last_response.body)
             expect(json['description']).to eq('The package upload is invalid: a file must be provided')
           end
 
