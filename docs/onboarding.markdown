@@ -35,8 +35,8 @@
 Our pipeline is public at [flintstone.ci.cf-app.com](https://flintstone.ci.cf-app.com).
 
 ```
-# name the target 'flintstone' and login
-fly --target flintstone login --concourse-url https://flintstone.ci.cf-app.com
+# name the target 'flintstone' and login with password from the Lastpass CLI.
+fly --target flintstone login --concourse-url http://10.155.248.166:8080 --user admin --password $(lpass show concourse --password)
 
 # if the auth expired, re-login using the previously named target
 fly -t flintstone login
@@ -50,6 +50,12 @@ fly -t flintstone destroy-pipeline -p test-exists
 # hijack into a job
 fly intercept -t flintstone --job bits-service/run-tests
 
+# let fly offer which container to hijack. Also, use sh instead of bash for busybox-based containers.
+fly intercept -t flintstone sh
+
 # run a single task with local changes without having to commit to git before
 fly execute -t flintstone --config ci/tasks/run-tests.yml --input=git-bits-service=.
+
+# same, but with two inputs
+fly execute -t flintstone --config ci/tasks/upload-to-object-storage.yml --input=git-bits-service-release=. --input=releases=dev_releases/bits-service
 ```
