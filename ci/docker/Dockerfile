@@ -29,7 +29,7 @@ RUN gem install --no-rdoc --no-ri \
         puma:2.16.0 \
         nokogiri:1.6.7.1 \
         fog:1.34.0 \
+        mime-types: 3.0 \
         byebug:8.2.2 \
         json:1.8.3 \
         ffi:1.9.10
-
