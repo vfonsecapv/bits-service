@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+require 'fog'
+require 'uri'
+require 'yaml'
+require 'optparse'
+
+#
+# Produce HTML with
+# be ci/swift-inventory | pandoc --standalone --to=html5 --output /tmp/files.html
+#
+
+begin
+  OptionParser.new do |opts|
+    opts.banner = <<-HERE
+#{opts.program_name} - lists files in SoftLayer ObjectStorage containers
+
+Usage:
+
+  #{opts.program_name} [dc]
+
+where dc is an optional datacenter key. If not given, dal05 is assumed.
+
+Options:
+
+HERE
+
+  opts.on('--debug', 'Run verbosely') do |debug|
+    ENV['EXCON_DEBUG'] = (!!debug).to_s
+  end
+
+  end.parse!
+rescue
+  warn $!.message
+  exit 1
+end
+
+config = YAML.load(`lpass show "Shared-Flintstone"/ci-config --notes`)
+user_name = config['openstack-user-name']
+auth_uri = URI(config['openstack-auth-url'])
+
+if ARGV.any?
+  parts = auth_uri.hostname.split('.')
+  parts[0] = ARGV.first
+  auth_uri.hostname = parts.join('.')
+end
+
+warn "Connecting to #{auth_uri} as #{user_name}"
+
+root = Fog::Storage.new(
+  :provider => 'OpenStack',
+  :openstack_auth_url => auth_uri.to_s,
+  :openstack_username => user_name,
+  :openstack_api_key  => config['openstack-api-key'],
+)
+
+puts "% Inventory"
+puts "as of #{Time.now}"
+puts
+
+root.directories.each do |directory|
+  puts "# #{directory.key}"
+
+  directory.files.group_by{|f| File.dirname(f.key)}.each do |dir, files|
+    puts "## #{dir}"
+    files.each do |file|
+      puts "* [#{File.basename(file.key)}](#{file.public_url}) (#{file.last_modified}, #{file.content_length} bytes)"
+    end
+
+    puts
+  end
+
+  puts
+end
+
+# require 'pry'
+# binding.pry
+# puts 'if binding.pry is the last statement, pry will not stop in the debugger and just end'
