@@ -84,3 +84,10 @@ Start bosh-lite and create our users:
 vagrant up
 bosh create user <user>
 ```
+
+# Install cf
+
+```
+wget --output-document=cf-cli.deb 'https://cli.run.pivotal.io/stable?release=debian64&version=6.15.0&source=github-rel'
+dpkg -i cf-cli.deb
+```
