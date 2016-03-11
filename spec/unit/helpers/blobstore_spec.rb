@@ -20,6 +20,10 @@ module BitsService
               fog_connection: 'fog_connection',
               directory_key: 'directory_key'
             },
+            buildpack_cache: {
+              fog_connection: 'fog_connection',
+              directory_key: 'directory_key_bc'
+            },
             droplets: {
               fog_connection: 'fog_connection',
               directory_key: 'directory_key'
@@ -65,6 +69,48 @@ module BitsService
 
             it 'throws an exception' do
               expect { subject.buildpack_blobstore }.to raise_error(KeyError, /:fog_connection/)
+            end
+          end
+        end
+
+        context 'buildpack_cache' do
+          it 'returns a blobstore client' do
+            expect(subject.buildpack_cache_blobstore).to be_a(BitsService::Blobstore::Client)
+          end
+
+          it 'creates a blobstore client with the correct config' do
+            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key_bc')
+            subject.buildpack_cache_blobstore
+          end
+
+          context 'when :directory_key is not present in config' do
+            let(:config) do
+              {
+                buildpack_cache: {
+                  fog_connection: 'fog_connection'
+                }
+              }
+            end
+
+            it 'creates a blobstore client with the correct default directory key' do
+              expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'buildpack_cache')
+              subject.buildpack_cache_blobstore
+            end
+          end
+
+          context 'when config is missing the :buildpack_cache key' do
+            let(:config) { Hash.new }
+
+            it 'throws an exception' do
+              expect { subject.buildpack_cache_blobstore }.to raise_error(KeyError, /:buildpack_cache/)
+            end
+          end
+
+          context 'when config is missing the :fog_connection key' do
+            let(:config) { { buildpack_cache: {} } }
+
+            it 'throws an exception' do
+              expect { subject.buildpack_cache_blobstore }.to raise_error(KeyError, /:fog_connection/)
             end
           end
         end
