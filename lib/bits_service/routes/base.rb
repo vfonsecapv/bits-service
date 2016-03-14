@@ -10,11 +10,20 @@ module BitsService
       end
 
       before do
-        logger.info('request.started', path: request.path, method: request.request_method)
+        logger.info(
+          'request.started',
+          path: request.path,
+          method: request.request_method,
+          vcap_request_id: request.env['HTTP_X_VCAP_REQUEST_ID']
+        )
       end
 
       after do
-        logger.info('request.ended', reponse_code: response.status)
+        logger.info(
+          'request.ended',
+          response_code: response.status,
+          vcap_request_id: request.env['HTTP_X_VCAP_REQUEST_ID']
+        )
       end
 
       error Errors::ApiError do |error|
