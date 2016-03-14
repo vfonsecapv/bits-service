@@ -27,6 +27,10 @@ module BitsService
             droplets: {
               fog_connection: 'fog_connection',
               directory_key: 'directory_key'
+            },
+            packages: {
+              fog_connection: 'fog_connection',
+              directory_key: 'directory_key'
             }
           }
         end
@@ -153,6 +157,48 @@ module BitsService
 
             it 'throws an exception' do
               expect { subject.droplet_blobstore }.to raise_error(KeyError, /:fog_connection/)
+            end
+          end
+        end
+
+        context 'packages' do
+          it 'returns a blobstore client' do
+            expect(subject.packages_blobstore).to be_a(BitsService::Blobstore::Client)
+          end
+
+          it 'creates a blobstore client with the correct config' do
+            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
+            subject.packages_blobstore
+          end
+
+          context 'when :directory_key is not present in config' do
+            let(:config) do
+              {
+                packages: {
+                  fog_connection: 'fog_connection'
+                }
+              }
+            end
+
+            it 'creates a blobstore client with the correct default directory key' do
+              expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'packages')
+              subject.packages_blobstore
+            end
+          end
+
+          context 'when config is missing the :droplets key' do
+            let(:config) { Hash.new }
+
+            it 'throws an exception' do
+              expect { subject.packages_blobstore }.to raise_error(KeyError, /:packages/)
+            end
+          end
+
+          context 'when config is missing the :fog_connection key' do
+            let(:config) { { packages: {} } }
+
+            it 'throws an exception' do
+              expect { subject.packages_blobstore }.to raise_error(KeyError, /:fog_connection/)
             end
           end
         end
