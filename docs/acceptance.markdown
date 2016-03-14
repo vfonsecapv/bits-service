@@ -8,7 +8,7 @@ bosh and cf clients should be configured
 The pipeline is pushing every release tgz and manifest to an object storage, all files are uploaded in the `upload-to-object-storage` task, check the list bellow to see where each file gets uploaded:
 
 * bits-service-release tgz: https://flintstone.ci.cf-app.com/pipelines/bits-service/jobs/create-and-upload-release
-* bits-service-release manifest: https://flintstone.ci.cf-app.com/pipelines/bits-service/jobs/deploy-with-LOCAL/
+* bits-service-release manifest: https://flintstone.ci.cf-app.com/pipelines/bits-service/jobs/deploy-with-LOCAL
 * cf-release tgz: https://flintstone.ci.cf-app.com/pipelines/bits-service/jobs/create-and-deploy-CF
 * cf-release manifest: https://flintstone.ci.cf-app.com/pipelines/bits-service/jobs/turn-BITS-flag-ON
 
