@@ -136,4 +136,44 @@ describe 'packages resource', type: :integration do
       end
     end
   end
+
+  describe 'PUT /packages/:guid/duplicate' do
+    let(:duplicate_path) { "#{resource_path}/duplicate" }
+
+    it 'returns HTTP status 201' do
+      response = make_put_request(duplicate_path)
+      expect(response.code).to eq 201
+    end
+
+    it 'ensures that the package is not using the same guid' do
+      response = make_put_request(duplicate_path)
+      json_response = JSON.parse(response.body)
+
+      expect(json_response['guid']).to_not eq(guid)
+    end
+
+    it 'stores the package in the package blobstore' do
+      response = make_put_request(duplicate_path)
+      json_response = JSON.parse(response.body)
+
+      expected_path = blob_path(@root_dir, 'packages', json_response['guid'])
+      expect(File).to exist(expected_path)
+      expect(File.read(expected_path)).to eq(package_contents)
+    end
+
+    context 'when the package does not exist' do
+      let(:duplicate_path) { '/packages/not-here/duplicate' }
+
+      it 'returns HTTP status 404' do
+        response = make_put_request(duplicate_path)
+        expect(response.code).to eq 404
+      end
+
+      it 'returns an error message' do
+        response = make_put_request(duplicate_path)
+        description = JSON.parse(response.body)['description']
+        expect(description).to eq 'Unknown request'
+      end
+    end
+  end
 end

@@ -13,7 +13,7 @@ module IntegrationHttp
     e.response
   end
 
-  def make_put_request(path, body)
+  def make_put_request(path, body=nil)
     RestClient.put "#{endpoint}#{path}", body
   rescue Errno::ECONNREFUSED => e
     raise e

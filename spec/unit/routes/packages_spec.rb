@@ -214,6 +214,71 @@ module BitsService
           end
         end
       end
+
+      describe 'PUT /packages/:guid/duplicate' do
+        let!(:guid) { SecureRandom.uuid }
+        let!(:new_guid) { SecureRandom.uuid }
+
+        let(:blob) { double(:blob) }
+        let(:package_file) do
+          Tempfile.new('package').tap do |file|
+            file.write('content!')
+            file.close
+          end
+        end
+        subject(:response) { put "/packages/#{guid}/duplicate" }
+
+        before do
+          allow(SecureRandom).to receive(:uuid).and_return(new_guid)
+          allow(blobstore).to receive(:blob).and_return(blob)
+          allow(blobstore).to receive(:cp_file_between_keys)
+        end
+
+        it 'returns HTTP status 201' do
+          expect(response.status).to eq(201)
+        end
+
+        it 'returns a new guid' do
+          json = JSON.parse(response.body)
+          expect(json['guid']).to eq(new_guid)
+          expect(json['guid']).to_not eq(guid)
+        end
+
+        it 'copies the blob between keys' do
+          expect(blobstore).to receive(:cp_file_between_keys).with(guid, new_guid)
+          response
+        end
+
+        context 'when the blob is missing' do
+          before do
+            allow(blobstore).to receive(:blob).and_return(nil)
+          end
+
+          it 'returns HTTP status 404' do
+            expect(response.status).to eq(404)
+          end
+        end
+
+        context 'when coping the blob object fails' do
+          before do
+            allow(blobstore).to receive(:cp_file_between_keys).and_raise(StandardError)
+          end
+
+          it 'returns HTTP status 500' do
+            expect(response.status).to eq(500)
+          end
+        end
+
+        context 'when fetching the blob object fails' do
+          before do
+            allow(blobstore).to receive(:blob).and_raise(StandardError)
+          end
+
+          it 'returns HTTP status 500' do
+            expect(response.status).to eq(500)
+          end
+        end
+      end
     end
   end
 end

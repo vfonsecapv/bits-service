@@ -16,8 +16,7 @@ module BitsService
         end
       end
 
-      get '/packages/:guid' do
-        guid = params[:guid]
+      get '/packages/:guid' do |guid|
         blob = packages_blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
@@ -25,6 +24,16 @@ module BitsService
         return [200, { 'X-Accel-Redirect' => blob.download_url }, nil] if use_nginx?
 
         return send_file blob.local_path
+      end
+
+      put '/packages/:guid/duplicate' do |guid|
+        blob = packages_blobstore.blob(guid)
+        fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
+
+        new_guid = SecureRandom.uuid
+        packages_blobstore.cp_file_between_keys(guid, new_guid)
+
+        json 201, { guid: new_guid }
       end
 
       delete '/packages/:guid' do |guid|
