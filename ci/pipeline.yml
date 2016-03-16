@@ -1,4 +1,19 @@
 groups:
+- name: all
+  - run-tests
+  - create-and-upload-release
+  - release-bits-release-lock
+  - deploy-with-S3
+  - deploy-with-LOCAL
+  - run-system-tests-S3
+  - run-system-tests-LOCAL
+  - done
+  - cc-tests
+  - create-and-deploy-CF
+  - CATs
+  - turn-BITS-flag-ON
+  - CATs-with-bits
+  - release-cf-release-lock
 - name: bits-service
   jobs:
   - run-tests
