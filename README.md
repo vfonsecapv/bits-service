@@ -38,7 +38,7 @@ Currently, only local filesystem and S3 are supported.
 
 ## Pipeline
 
-The pipeline is publically visible at [https://flintstone.ci.cf-app.com](flintstone.ci.cf-app.com).
+The pipeline is publically visible at [flintstone.ci.cf-app.com](https://flintstone.ci.cf-app.com).
 
 To update the pipeline use `./ci/set-pipeline.sh`. 
 
