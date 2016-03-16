@@ -31,6 +31,13 @@ module BitsService
         halt error.response_code, { description: error.message, code: error.code }.to_json
       end
 
+      error StandardError do |error|
+        logger.error('error', description: error.message, stack_trace: error.backtrace)
+        return halt 500 if ENV['RACK_ENV'] == 'production'
+
+        halt 500, { description: error.message, stack_trace: error.backtrace }.to_json
+      end
+
       private
 
       def json(status_code, body)
