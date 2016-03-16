@@ -32,6 +32,14 @@ module BitsService
         end
       end
 
+      delete '/buildpack_cache/:app_guid/:stack_name' do |app_guid, stack_name|
+        cache_key = key(app_guid, stack_name)
+        blob = buildpack_cache_blobstore.blob(cache_key)
+        fail Errors::ApiError.new_from_details('NotFound', cache_key) unless blob
+        buildpack_cache_blobstore.delete_blob(blob)
+        status 204
+      end
+
       private
 
       def key(app_guid, stack_name)

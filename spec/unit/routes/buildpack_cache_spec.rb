@@ -269,6 +269,44 @@ module BitsService
           end
         end
       end
+
+      describe 'DELETE /buildpack_cache/:app_guid/:stack_name' do
+        let(:blob) do
+          double(BitsService::Blobstore::Blob)
+        end
+
+        let(:blobstore) do
+          double(BitsService::Blobstore::Client, blob: blob)
+        end
+
+        before(:each) do
+          allow_any_instance_of(Routes::BuildpackCache).to receive(:buildpack_cache_blobstore).and_return(blobstore)
+          allow(blobstore).to receive(:delete_blob).and_return(true)
+        end
+
+        it 'returns HTTP status code 204' do
+          delete "/buildpack_cache/#{key}", headers
+          expect(last_response.status).to eq(204)
+        end
+
+        it 'deletes the blob using the blobstore client' do
+          expect(blobstore).to receive(:delete_blob).with(blob)
+          delete "/buildpack_cache/#{key}", headers
+        end
+
+        context 'when the buildpack cache does not exist' do
+          let(:blob) { nil }
+
+          it 'returns a corresponding error' do
+            delete "/buildpack_cache/#{key}", headers
+
+            expect(last_response.status).to eq(404)
+            json = JSON.parse(last_response.body)
+            expect(json['code']).to eq(10_000)
+            expect(json['description']).to match(/Unknown request/)
+          end
+        end
+      end
     end
   end
 end

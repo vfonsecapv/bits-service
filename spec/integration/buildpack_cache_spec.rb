@@ -119,4 +119,39 @@ describe 'buildpack_cache resource', type: :integration do
       end
     end
   end
+
+  describe 'DELETE /buildpack_cache/:app_guid/:stack_name' do
+    context 'when the buildpack cache exists' do
+      before do
+        make_post_request(resource_path, upload_body)
+      end
+
+      it 'returns HTTP status code 204' do
+        response = make_delete_request(resource_path)
+        expect(response.code).to eq 204
+      end
+
+      it 'removes the stored file' do
+        expected_path = blobstore_path(key)
+        expect(File).to exist(expected_path)
+        make_delete_request(resource_path)
+        expect(File).to_not exist(expected_path)
+      end
+    end
+
+    context 'when the buildpack cache does not exist' do
+      let(:resource_path) { '/buildpack_cache/not-existing/windows' }
+
+      it 'returns HTTP status code 404' do
+        response = make_delete_request(resource_path)
+        expect(response.code).to eq 404
+      end
+
+      it 'returns the expected error description' do
+        response = make_delete_request(resource_path)
+        description = JSON.parse(response.body)['description']
+        expect(description).to eq 'Unknown request'
+      end
+    end
+  end
 end
