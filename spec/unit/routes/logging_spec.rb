@@ -57,30 +57,31 @@ module BitsService
         expect(result['request.ended'][:response_code]).to eq(404)
       end
 
-      context 'when the vcap_request_id is present'
-      let(:vcap_request_id) { '4711-XYZ' }
-      let(:headers) { { 'HTTP_X_VCAP_REQUEST_ID' => vcap_request_id } }
+      context 'when the vcap_request_id is present' do
+        let(:vcap_request_id) { '4711-XYZ' }
+        let(:headers) { { 'HTTP_X_VCAP_REQUEST_ID' => vcap_request_id } }
 
-      it 'includes the vcap_request_id' do
-        result = {}
+        it 'includes the vcap_request_id' do
+          result = {}
 
-        expect_any_instance_of(Steno::Logger).to receive(:info).at_least(:twice) do |logger, event, hash|
-          result[event] = hash
+          expect_any_instance_of(Steno::Logger).to receive(:info).at_least(:twice) do |logger, event, hash|
+            result[event] = hash
+          end
+
+          get '/buildpacks/1234-5678-90', {}, headers
+
+          expect(result['request.started']).to be
+          expect(result['request.started']).to include(:vcap_request_id)
+          expect(result['request.started'][:vcap_request_id]).to eq(vcap_request_id)
+
+          expect(result['request.ended']).to be
+          expect(result['request.ended']).to include(:vcap_request_id)
+          expect(result['request.ended'][:vcap_request_id]).to eq(vcap_request_id)
         end
-
-        get '/buildpacks/1234-5678-90', {}, headers
-
-        expect(result['request.started']).to be
-        expect(result['request.started']).to include(:vcap_request_id)
-        expect(result['request.started'][:vcap_request_id]).to eq(vcap_request_id)
-
-        expect(result['request.ended']).to be
-        expect(result['request.ended']).to include(:vcap_request_id)
-        expect(result['request.ended'][:vcap_request_id]).to eq(vcap_request_id)
       end
     end
 
-    context 'when the vcap_request_id is present' do
+    context 'when the vcap_request_id is not present' do
       let(:vcap_request_id) { nil }
       let(:headers) { {} }
 
