@@ -54,13 +54,13 @@ module BitsService
         FileUtils.rm_rf(File.dirname(zip_filepath))
       end
 
-      describe 'POST /buildpack_cache' do
+      describe 'PUT /buildpack_cache' do
         before do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
         end
 
         it 'returns HTTP status 201' do
-          post "/buildpack_cache/#{key}", upload_body, headers
+          put "/buildpack_cache/#{key}", upload_body, headers
           expect(last_response.status).to eq(201)
         end
 
@@ -69,7 +69,7 @@ module BitsService
           expect_any_instance_of(Routes::BuildpackCache).to receive(:buildpack_cache_blobstore).and_return(blobstore)
           expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, key)
 
-          post "/buildpack_cache/#{key}", upload_body, headers
+          put "/buildpack_cache/#{key}", upload_body, headers
         end
 
         it 'instantiates the upload params decorator with the right arguments' do
@@ -77,19 +77,19 @@ module BitsService
                                                                   'buildpack_cache' => anything
           ), use_nginx: false).once
 
-          post "/buildpack_cache/#{key}", upload_body, headers
+          put "/buildpack_cache/#{key}", upload_body, headers
         end
 
         it 'gets the uploaded filepath from the upload params decorator' do
           decorator = double(Helpers::Upload::Params)
           allow(Helpers::Upload::Params).to receive(:new).and_return(decorator)
           expect(decorator).to receive(:upload_filepath).with('buildpack_cache').once
-          post "/buildpack_cache/#{key}", upload_body, headers
+          put "/buildpack_cache/#{key}", upload_body, headers
         end
 
         it 'does not leave the temporary instance of the uploaded file around' do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-          post "/buildpack_cache/#{key}", upload_body, headers
+          put "/buildpack_cache/#{key}", upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
         end
 
@@ -101,7 +101,7 @@ module BitsService
           it 'returns a corresponding error' do
             expect_any_instance_of(Routes::Buildpacks).to_not receive(:buildpack_blobstore)
 
-            post "/buildpack_cache/#{key}", upload_body, headers
+            put "/buildpack_cache/#{key}", upload_body, headers
 
             expect(last_response.status).to eq(400)
             json = JSON.parse(last_response.body)
@@ -116,13 +116,13 @@ module BitsService
           end
 
           it 'return HTTP status 500' do
-            post "/buildpack_cache/#{key}", upload_body, headers
+            put "/buildpack_cache/#{key}", upload_body, headers
             expect(last_response.status).to eq(500)
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-            post "/buildpack_cache/#{key}", upload_body, headers
+            put "/buildpack_cache/#{key}", upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
         end
@@ -133,13 +133,13 @@ module BitsService
           end
 
           it 'return HTTP status 500' do
-            post "/buildpack_cache/#{key}", upload_body, headers
+            put "/buildpack_cache/#{key}", upload_body, headers
             expect(last_response.status).to eq(500)
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-            post "/buildpack_cache/#{key}", upload_body, headers
+            put "/buildpack_cache/#{key}", upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
         end

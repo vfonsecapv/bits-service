@@ -53,14 +53,14 @@ describe 'buildpack_cache resource', type: :integration do
     blob_path(@root_dir, 'directory-key', key)
   end
 
-  describe 'POST /buildpack_cache' do
+  describe 'PUT /buildpack_cache' do
     it 'returns HTTP status 201' do
-      response = make_post_request(resource_path, upload_body)
+      response = make_put_request(resource_path, upload_body)
       expect(response.code).to eq 201
     end
 
     it 'correctly stores the file in the blob store' do
-      make_post_request(resource_path, upload_body)
+      make_put_request(resource_path, upload_body)
 
       expected_path = blobstore_path(key)
       expect(File).to exist(expected_path)
@@ -70,12 +70,12 @@ describe 'buildpack_cache resource', type: :integration do
       let(:upload_body) { {} }
 
       it 'returns HTTP status 400' do
-        response = make_post_request(resource_path, upload_body)
+        response = make_put_request(resource_path, upload_body)
         expect(response.code).to eq 400
       end
 
       it 'returns the expected error description' do
-        response = make_post_request(resource_path, upload_body)
+        response = make_put_request(resource_path, upload_body)
         description = JSON.parse(response.body)['description']
         expect(description).to eq 'The buildpack_cache upload is invalid: a file must be provided'
       end
@@ -85,7 +85,7 @@ describe 'buildpack_cache resource', type: :integration do
   describe 'GET /buildpack_cache/:app_guid/:stack_name' do
     context 'when the buildpack cache exists' do
       before do
-        make_post_request(resource_path, upload_body)
+        make_put_request(resource_path, upload_body)
       end
 
       it 'returns HTTP status code 200' do
@@ -123,7 +123,7 @@ describe 'buildpack_cache resource', type: :integration do
   describe 'DELETE /buildpack_cache/:app_guid/:stack_name' do
     context 'when the buildpack cache exists' do
       before do
-        make_post_request(resource_path, upload_body)
+        make_put_request(resource_path, upload_body)
       end
 
       it 'returns HTTP status code 204' do
