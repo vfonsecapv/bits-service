@@ -42,3 +42,8 @@
   name: BuildpackCacheBitsUploadInvalid
   http_code: 400
   message: "The buildpack_cache upload is invalid: %s"
+
+290006:
+  name: InvalidPackageSource
+  http_code: 400
+  message: "Cannot create package. The source must either be uploaded or the guid of a source app to be copied must be provided"
