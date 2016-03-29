@@ -1,5 +1,6 @@
 groups:
 - name: all
+  jobs:
   - run-tests
   - create-and-upload-release
   - release-bits-release-lock
