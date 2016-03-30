@@ -18,7 +18,8 @@ properties:
 
 * all the above
 
-* Add bits-service job:
+* Add bits-service job
+
 ```
 jobs:
 - instances: 1
@@ -37,7 +38,8 @@ jobs:
     serial: true
 ```
 
-* Co-locate bits-service release:
+* Co-locate bits-service release
+
 ```
 releases:
 - name: cf
@@ -64,9 +66,13 @@ properties:
     <<: (( merge ))
 ```
 
+* Enable bits-service in Cloud Controller
+
+```
 cc:
 -    bits_service:
 -      enabled: true
 -      endpoint: http://10.244.0.74
+```
 
 And merge with template from bits-service-release. See the CI task for generating the cf-with-flag.yml
