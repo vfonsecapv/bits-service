@@ -24,6 +24,8 @@ module BitsService
 
       let(:use_nginx) { false }
 
+      let(:blobstore) { double(BitsService::Blobstore::Client) }
+
       let(:config) do
         {
           buildpack_cache: {
@@ -54,9 +56,14 @@ module BitsService
         FileUtils.rm_rf(File.dirname(zip_filepath))
       end
 
+      before do
+        allow_any_instance_of(Routes::BuildpackCache).to receive(:buildpack_cache_blobstore).and_return(blobstore)
+      end
+
       describe 'PUT /buildpack_cache' do
         before do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
+          allow(blobstore).to receive(:cp_to_blobstore)
         end
 
         it 'returns HTTP status 201' do
@@ -65,8 +72,6 @@ module BitsService
         end
 
         it 'stores the uploaded file in the buildpak_cache blobstore using the correct key' do
-          blobstore = double(BitsService::Blobstore::Client)
-          expect_any_instance_of(Routes::BuildpackCache).to receive(:buildpack_cache_blobstore).and_return(blobstore)
           expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, key)
 
           put "/buildpack_cache/#{key}", upload_body, headers
@@ -112,7 +117,7 @@ module BitsService
 
         context 'when the blobstore copy fails' do
           before(:each) do
-            allow_any_instance_of(Blobstore::Client).to receive(:cp_to_blobstore).and_raise('some error')
+            allow(blobstore).to receive(:cp_to_blobstore).and_raise('some error')
           end
 
           it 'return HTTP status 500' do
@@ -156,10 +161,6 @@ module BitsService
           double(BitsService::Blobstore::Client).tap do |blobstore|
             allow(blobstore).to receive(:blob).with(key).and_return(blob)
           end
-        end
-
-        before(:each) do
-          allow_any_instance_of(Routes::BuildpackCache).to receive(:buildpack_cache_blobstore).and_return(blobstore)
         end
 
         it 'creates the buildpack cache blobstore using the blobstore factory' do
@@ -280,7 +281,6 @@ module BitsService
         end
 
         before(:each) do
-          allow_any_instance_of(Routes::BuildpackCache).to receive(:buildpack_cache_blobstore).and_return(blobstore)
           allow(blobstore).to receive(:delete_blob).and_return(true)
         end
 
@@ -305,6 +305,30 @@ module BitsService
             expect(json['code']).to eq(10_000)
             expect(json['description']).to match(/Unknown request/)
           end
+        end
+      end
+
+      describe 'DELETE /buildpack_cache' do
+        let(:blob) do
+          double(BitsService::Blobstore::Blob)
+        end
+
+        let(:blobstore) do
+          double(BitsService::Blobstore::Client)
+        end
+
+        before(:each) do
+          allow(blobstore).to receive(:delete_all).and_return(true)
+        end
+
+        it 'returns HTTP status code 204' do
+          delete '/buildpack_cache', headers
+          expect(last_response.status).to eq(204)
+        end
+
+        it 'deletes all the blobs using the blobstore client' do
+          expect(blobstore).to receive(:delete_all)
+          delete '/buildpack_cache', headers
         end
       end
     end

@@ -40,6 +40,11 @@ module BitsService
         status 204
       end
 
+      delete '/buildpack_cache' do
+        buildpack_cache_blobstore.delete_all
+        status 204
+      end
+
       private
 
       def key(app_guid, stack_name)

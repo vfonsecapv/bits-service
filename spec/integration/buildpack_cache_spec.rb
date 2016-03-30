@@ -39,10 +39,8 @@ describe 'buildpack_cache resource', type: :integration do
   end
 
   let(:upload_body) { { buildpack_cache: zip_file } }
-
-  let(:resource_path) do
-    "/buildpack_cache/#{key}"
-  end
+  let(:resource_path) { "/buildpack_cache/#{key}" }
+  let(:collection_path) { '/buildpack_cache' }
 
   let(:key) do
     guid = SecureRandom.uuid
@@ -152,6 +150,34 @@ describe 'buildpack_cache resource', type: :integration do
         description = JSON.parse(response.body)['description']
         expect(description).to eq 'Unknown request'
       end
+    end
+  end
+
+  describe 'DELETE /buildpack_cache' do
+    let(:key1) { "#{SecureRandom.uuid}/some-stack-name" }
+    let(:key2) { "#{SecureRandom.uuid}/some-stack-name" }
+
+    def create_file_for_upload
+      filepath = File.join(Dir.mktmpdir, 'file.zip')
+      TestZip.create(filepath, 1, 1024)
+      File.new(filepath)
+    end
+
+    before do
+      [key1, key2].each do |key|
+        make_put_request("/buildpack_cache/#{key}", { buildpack_cache: create_file_for_upload })
+      end
+    end
+
+    it 'returns HTTP status 204' do
+      response = make_delete_request(collection_path)
+      expect(response.code).to eq 204
+    end
+
+    it 'removes all the stored files' do
+      [key1, key2].each { |key| expect(File).to exist(blobstore_path(key)) }
+      make_delete_request(collection_path)
+      [key1, key2].each { |key| expect(File).to_not exist(blobstore_path(key)) }
     end
   end
 end
