@@ -620,9 +620,9 @@ module BitsService
 
           context 'when the key is less than 4 characters' do
             it 'does not raise exeception' do
-              expect {
+              expect do
                 DummyClient.new('', '').public_pk('0')
-              }.to_not raise_error
+              end.to_not raise_error
             end
           end
         end
@@ -880,6 +880,7 @@ module BitsService
               code = res.code
               total_time += 0.1
               sleep 0.1
+              # rubocop:disable Lint/HandleExceptions
             rescue
             end
           end

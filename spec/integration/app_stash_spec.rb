@@ -105,7 +105,7 @@ describe 'app_stash endpoint', type: :integration do
 
     before do
       zip_filepath = File.expand_path('../../fixtures/integration/app.zip', __FILE__)
-      request_body = { application: File.new(zip_filepath)  }
+      request_body = { application: File.new(zip_filepath) }
       make_post_request('/app_stash/entries', request_body)
     end
 

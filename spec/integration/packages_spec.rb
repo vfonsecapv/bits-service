@@ -155,9 +155,9 @@ describe 'packages resource', type: :integration do
       it 'removes the stored file' do
         expected_path = blob_path(@root_dir, 'packages', guid)
 
-        expect {
+        expect do
           make_delete_request(resource_path)
-        }.to change {
+        end.to change {
           File.exist?(expected_path)
         }.from(true).to(false)
       end

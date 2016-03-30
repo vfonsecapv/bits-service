@@ -17,6 +17,7 @@ namespace :spec do
   end
 end
 
+desc 'Run rubocop with --auto-correct'
 task :rubocop_autocorrect do
   require 'rubocop'
   cli = RuboCop::CLI.new

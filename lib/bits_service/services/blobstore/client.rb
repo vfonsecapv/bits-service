@@ -20,7 +20,7 @@ module BitsService
       end
 
       def local?
-        @connection_config[:provider].downcase == 'local'
+        @connection_config[:provider].casecmp('local').zero?
       end
 
       def exists?(key)
@@ -184,13 +184,13 @@ module BitsService
           batch << f
 
           if batch.length == batch_size
-            blk.call(batch)
+            yield(batch)
             batch = []
           end
         end
 
-        if batch.length > 0
-          blk.call(batch)
+        if !batch.empty?
+          yield(batch)
         end
       end
 

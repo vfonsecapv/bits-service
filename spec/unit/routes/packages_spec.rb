@@ -14,7 +14,7 @@ module BitsService
           let(:package_guid) { SecureRandom.uuid }
           let(:zip_filepath) { '/path/to/zip/file' }
           let(:request_body) { { application: 'something' } }
-          let(:package_response) { { 'guid' => package_guid }  }
+          let(:package_response) { { 'guid' => package_guid } }
 
           before do
             allow(SecureRandom).to receive(:uuid).and_return(package_guid)

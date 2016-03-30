@@ -35,7 +35,7 @@ module BitsService
           [
             "Archive:\n Filename\n ---\n 0  09-15-15 17:44 foo\n ---\n10000000001 1 file\n",
             nil,
-            double('status', :success? => true)]
+            double('status', success?: true)]
         )
         expect(SafeZipper.unzip!(zip_path, zip_destination)).to eq 10_000_000_001
       end
@@ -130,9 +130,9 @@ module BitsService
         let(:root_path) { fixture_path('no_exist') }
 
         it 'will raise an error' do
-          expect {
+          expect do
             SafeZipper.zip(root_path, tmp_zip)
-          }.to raise_exception SafeZipper::Error, /path does not exist/i
+          end.to raise_exception SafeZipper::Error, /path does not exist/i
         end
       end
 
@@ -140,9 +140,9 @@ module BitsService
         let(:tmp_zip) { '/non/existent/path/to/tmp.zip' }
 
         it 'will raise an error' do
-          expect {
+          expect do
             SafeZipper.zip(root_path, tmp_zip)
-          }.to raise_exception SafeZipper::Error, /path does not exist/i
+          end.to raise_exception SafeZipper::Error, /path does not exist/i
         end
       end
 
@@ -152,9 +152,9 @@ module BitsService
         it 'will raise an error' do
           allow(File).to receive(:exist?).and_return(true)
 
-          expect {
+          expect do
             SafeZipper.zip(root_path, tmp_zip)
-          }.to raise_exception SafeZipper::Error, /could not zip the package\n STDOUT: "zip .+?"\n STDERR: ""/im
+          end.to raise_exception SafeZipper::Error, /could not zip the package\n STDOUT: "zip .+?"\n STDERR: ""/im
         end
       end
     end
