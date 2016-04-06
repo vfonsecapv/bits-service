@@ -52,8 +52,11 @@ ip route add 10.250.0.0/16 via 192.168.50.4
 echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
 ip route add 10.250.0.0/16 via 192.168.100.4
 
-vagrant ssh  #(into both bosh lites)
+vagrant ssh  #(into bosh1)
 ip route add 10.155.248.0/24 via 192.168.50.1 dev eth1
+
+vagrant ssh  #(into bosh2)
+ip route add 10.155.248.0/24 via 192.168.100.1 dev eth1
 ```
 
 # Update bosh-lite
