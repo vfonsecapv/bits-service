@@ -21,6 +21,9 @@ RUN gem install bundler --no-rdoc --no-ri && \
 RUN wget https://github.com/cloudfoundry-incubator/spiff/releases/download/v1.0.7/spiff_linux_amd64.zip && \
     unzip spiff_linux_amd64.zip && mv spiff /usr/local/bin/ && rm spiff_linux_amd64.zip
 
+RUN wget https://github.com/geofffranks/spruce/releases/download/v1.1.2/spruce-linux-amd64 -O /usr/local/bin/spruce && \
+    chmod +x /usr/local/bin/spruce
+
 RUN gem install --no-rdoc --no-ri \
         unf_ext:0.0.7.2 \
         msgpack:0.5.9 \
