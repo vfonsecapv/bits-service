@@ -28,12 +28,12 @@ module BitsService
 
         if buildpack_blobstore.local?
           if use_nginx?
-            return [200, { 'X-Accel-Redirect' => blob.download_url }, nil]
+            return [200, { 'X-Accel-Redirect' => blob.internal_download_url }, nil]
           else
             return send_file blob.local_path
           end
         else
-          return [302, { 'Location' => blob.download_url }, nil]
+          return [302, { 'Location' => blob.public_download_url }, nil]
         end
       end
 

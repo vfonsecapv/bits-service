@@ -176,7 +176,7 @@ module BitsService
         let(:download_url) { 'some-url' }
 
         let(:blob) do
-          double(BitsService::Blobstore::Blob, download_url: download_url)
+          double(BitsService::Blobstore::Blob, public_download_url: download_url)
         end
 
         let(:blobstore) do
@@ -212,6 +212,10 @@ module BitsService
           context 'and we are using nginx' do
             let(:use_nginx) { true }
 
+            let(:blob) do
+              double(BitsService::Blobstore::Blob, internal_download_url: download_url)
+            end
+
             it 'returns HTTP status code 200' do
               get "/droplets/#{guid}", headers
               expect(last_response.status).to eq(200)
@@ -223,7 +227,7 @@ module BitsService
             end
 
             it 'gets the download_url from the blob' do
-              expect(blob).to receive(:download_url).once
+              expect(blob).to receive(:internal_download_url).once
               get "/droplets/#{guid}", headers
             end
           end

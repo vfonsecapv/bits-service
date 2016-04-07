@@ -17,8 +17,8 @@ module BitsService
         blob = packages_blobstore.blob(guid)
         fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
 
-        return [302, { 'Location' => blob.download_url }, nil] unless packages_blobstore.local?
-        return [200, { 'X-Accel-Redirect' => blob.download_url }, nil] if use_nginx?
+        return [302, { 'Location' => blob.public_download_url }, nil] unless packages_blobstore.local?
+        return [200, { 'X-Accel-Redirect' => blob.internal_download_url }, nil] if use_nginx?
 
         return send_file blob.local_path
       end

@@ -185,7 +185,7 @@ module BitsService
 
           before do
             allow(blobstore).to receive(:local?).and_return(false)
-            allow(blob).to receive(:download_url).and_return(download_url)
+            allow(blob).to receive(:public_download_url).and_return(download_url)
           end
 
           it 'returns HTTP status 302' do
@@ -202,7 +202,7 @@ module BitsService
 
           before do
             allow_any_instance_of(Packages).to receive(:use_nginx?).and_return(true)
-            allow(blob).to receive(:download_url).and_return(download_url)
+            allow(blob).to receive(:internal_download_url).and_return(download_url)
           end
 
           it 'returns HTTP status 200' do
