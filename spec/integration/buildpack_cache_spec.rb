@@ -48,7 +48,7 @@ describe 'buildpack_cache resource', type: :integration do
   end
 
   def blobstore_path(key)
-    blob_path(@root_dir, 'directory-key', key)
+    blob_path(@root_dir, File.join('directory-key', 'buildpack_cache'), key)
   end
 
   describe 'PUT /buildpack_cache' do

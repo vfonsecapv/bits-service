@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'bits_service/services/blobstore/fog/cdn'
 require 'cloudfront-signer'
 
 module BitsService
@@ -20,9 +21,9 @@ module BitsService
 
       describe '.new' do
         it 'is private' do
-          expect do
+          expect {
             Cdn.new('foo')
-          end.to raise_error(/private method/)
+          }.to raise_error(/private method/)
         end
       end
 
@@ -32,13 +33,13 @@ module BitsService
         context 'when CloudFront Signer is not configured' do
           before do
             allow(Aws::CF::Signer).to receive(:is_configured?).and_return(false)
-            @stub = WebMock::API.stub_request(:get, "#{cdn_host}/#{path_location}").to_return(body: 'barbaz')
+            @stub = stub_request(:get, "#{cdn_host}/#{path_location}").to_return(body: 'barbaz')
           end
 
           it 'yields' do
-            expect do |yielded|
+            expect { |yielded|
               cdn.get(path_location, &yielded)
-            end.to yield_control
+            }.to yield_control
           end
 
           it 'downloads the file' do
@@ -58,7 +59,7 @@ module BitsService
 
           it 'returns a signed URI using the CDN' do
             expect(Aws::CF::Signer).to receive(:sign_url).with("#{cdn_host}/#{path_location}").and_return('http://signed_url')
-            stub = WebMock::API.stub_request(:get, 'signed_url').to_return(body: 'foobar')
+            stub = stub_request(:get, 'signed_url').to_return(body: 'foobar')
 
             cdn.get(path_location) {}
 

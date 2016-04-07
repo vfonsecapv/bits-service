@@ -1,5 +1,3 @@
-require 'cloudfront-signer'
-
 module BitsService
   module Blobstore
     class Cdn

@@ -10,6 +10,8 @@ require 'webmock/rspec'
 require 'pry'
 require 'pry-byebug'
 
+require 'active_support/core_ext/object/inclusion'
+
 Dir[File.expand_path('support/**/*.rb', File.dirname(__FILE__))].each { |file| require file }
 
 RSpec.configure do |conf|
@@ -22,6 +24,10 @@ RSpec.configure do |conf|
 
   conf.include ConfigFileHelpers
   conf.include FileHelpers
+
+  conf.before :each do
+    Fog::Mock.reset
+  end
 
   conf.after :each do
     Timecop.return

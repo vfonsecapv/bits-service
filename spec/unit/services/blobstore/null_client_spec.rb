@@ -4,9 +4,9 @@ require_relative 'client_shared'
 
 module BitsService
   module Blobstore
-    describe Client do
-      subject(:client) { Client.new(NullClient.new) }
-      let(:deletable_blob) { Blob.new }
+    describe NullClient do
+      subject(:client) { NullClient.new }
+      let(:deletable_blob) { instance_double(Blob) }
 
       it_behaves_like 'a blobstore client'
     end

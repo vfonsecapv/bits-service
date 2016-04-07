@@ -15,13 +15,13 @@ module BitsService
         IdempotentDirectory.new(directory)
       end
 
-      describe '#fetch!' do
+      describe '#get_or_create' do
         context 'when the directory exists' do
           it 'should return the existing Fog directory' do
             expect(directory).to receive(:get).and_return(fog_directory)
             expect(directory).not_to receive(:create)
 
-            expect(idempotent_directory.fetch!).to eq(fog_directory)
+            expect(idempotent_directory.get_or_create).to eq(fog_directory)
           end
         end
 
@@ -30,7 +30,7 @@ module BitsService
             expect(directory).to receive(:get).and_return(nil)
             expect(directory).to receive(:create).and_return(fog_directory)
 
-            expect(idempotent_directory.fetch!).to eq(fog_directory)
+            expect(idempotent_directory.get_or_create).to eq(fog_directory)
           end
         end
       end

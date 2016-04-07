@@ -41,7 +41,11 @@ module BitsService
           end
 
           it 'creates a blobstore client with the correct config' do
-            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
+            expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+              options: config[:buildpacks],
+              directory_key: 'directory_key',
+              root_dir: nil,
+            )
             subject.buildpack_blobstore
           end
 
@@ -55,7 +59,11 @@ module BitsService
             end
 
             it 'creates a blobstore client with the correct default directory key' do
-              expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'buildpacks')
+              expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+                options: config[:buildpacks],
+                directory_key: 'buildpacks',
+                root_dir: nil,
+              )
               subject.buildpack_blobstore
             end
           end
@@ -83,7 +91,11 @@ module BitsService
           end
 
           it 'creates a blobstore client with the correct config' do
-            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key_bc')
+            expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+              options: config[:buildpack_cache],
+              directory_key: 'directory_key_bc',
+              root_dir: 'buildpack_cache',
+            )
             subject.buildpack_cache_blobstore
           end
 
@@ -97,7 +109,11 @@ module BitsService
             end
 
             it 'creates a blobstore client with the correct default directory key' do
-              expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'buildpack_cache')
+              expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+                options: config[:buildpack_cache],
+                directory_key: 'buildpack_cache',
+                root_dir: 'buildpack_cache',
+              )
               subject.buildpack_cache_blobstore
             end
           end
@@ -125,7 +141,11 @@ module BitsService
           end
 
           it 'creates a blobstore client with the correct config' do
-            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
+            expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+              options: config[:droplets],
+              directory_key: 'directory_key',
+              root_dir: nil,
+            )
             subject.droplet_blobstore
           end
 
@@ -139,7 +159,11 @@ module BitsService
             end
 
             it 'creates a blobstore client with the correct default directory key' do
-              expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'droplets')
+              expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+                options: config[:droplets],
+                directory_key: 'droplets',
+                root_dir: nil,
+              )
               subject.droplet_blobstore
             end
           end
@@ -167,7 +191,11 @@ module BitsService
           end
 
           it 'creates a blobstore client with the correct config' do
-            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
+            expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+              options: config[:packages],
+              directory_key: 'directory_key',
+              root_dir: nil,
+            )
             subject.packages_blobstore
           end
 
@@ -181,7 +209,11 @@ module BitsService
             end
 
             it 'creates a blobstore client with the correct default directory key' do
-              expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'packages')
+              expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+                options: config[:packages],
+                directory_key: 'packages',
+                root_dir: nil,
+              )
               subject.packages_blobstore
             end
           end
@@ -219,7 +251,11 @@ module BitsService
         end
 
         it 'creates a blobstore client with the correct config' do
-          expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'directory_key')
+          expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+            options: config[:app_stash],
+            directory_key: 'directory_key',
+            root_dir: nil,
+          )
           subject.app_stash_blobstore
         end
 
@@ -233,7 +269,11 @@ module BitsService
           end
 
           it 'creates a blobstore client with the correct default directory key' do
-            expect(BitsService::Blobstore::Client).to receive(:new).with('fog_connection', 'app_stash')
+            expect(BitsService::Blobstore::ClientProvider).to receive(:provide).with(
+              options: config[:app_stash],
+              directory_key: 'app_stash',
+              root_dir: nil,
+            )
             subject.app_stash_blobstore
           end
         end

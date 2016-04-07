@@ -1,3 +1,4 @@
+# rubocop:disable Style/AccessorMethodName
 module BitsService
   module Blobstore
     class IdempotentDirectory
@@ -5,9 +6,10 @@ module BitsService
         @directory = directory
       end
 
-      def fetch!
+      def get_or_create
         @directory.get || @directory.create
       end
     end
   end
 end
+# rubocop:enable Style/AccessorMethodName

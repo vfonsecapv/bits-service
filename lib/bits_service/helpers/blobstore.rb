@@ -6,7 +6,7 @@ module BitsService
       end
 
       def buildpack_cache_blobstore
-        @buildpack_cache_blobstore ||= create_client(:buildpack_cache)
+        @buildpack_cache_blobstore ||= create_client(:buildpack_cache, 'buildpack_cache')
       end
 
       def droplet_blobstore
@@ -23,12 +23,13 @@ module BitsService
 
       private
 
-      def create_client(key)
+      def create_client(key, root_dir=nil)
         cfg = config.fetch(key)
 
-        BitsService::Blobstore::Client.new(
-          cfg.fetch(:fog_connection),
-          cfg.fetch(:directory_key, key.to_s),
+        BitsService::Blobstore::ClientProvider.provide(
+          options: cfg,
+          directory_key: cfg.fetch(:directory_key, key.to_s),
+          root_dir: root_dir,
         )
       end
     end

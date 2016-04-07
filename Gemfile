@@ -23,4 +23,5 @@ group :development do
   gem 'guard-rspec', require: false
   gem 'guard-bundler', require: false
   gem 'pry-byebug'
+  gem 'machinist', '~> 1.0.6'
 end
