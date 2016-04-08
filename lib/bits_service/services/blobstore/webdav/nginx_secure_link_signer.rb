@@ -2,16 +2,14 @@ module BitsService
   module Blobstore
     class NginxSecureLinkSigner
       def initialize(internal_endpoint:, internal_path_prefix: nil,
-        public_endpoint:, public_path_prefix: nil, basic_auth_user:, basic_auth_password:)
+        public_endpoint:, public_path_prefix: nil, basic_auth_user:, basic_auth_password:, http_client:)
 
         @internal_uri         = URI(internal_endpoint)
         @internal_path_prefix = internal_path_prefix
         @public_uri           = URI(public_endpoint)
         @public_path_prefix   = public_path_prefix
 
-        @client = HTTPClient.new
-        @client.ssl_config.set_default_paths
-        @client.ssl_config.verify_mode = skip_cert_verify ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
+        @client = http_client
 
         @headers = {}
         @headers['Authorization'] = 'Basic ' + Base64.strict_encode64("#{basic_auth_user}:#{basic_auth_password}").strip
@@ -40,10 +38,6 @@ module BitsService
       end
 
       private
-
-      def skip_cert_verify
-        BitsService::Environment.config[:skip_cert_verify]
-      end
 
       def make_request(uri:)
         response = @client.get(uri, header: @headers)

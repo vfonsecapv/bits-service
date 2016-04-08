@@ -17,10 +17,10 @@ module BitsService
       end
       let(:directory_key) { 'droplets' }
       let(:root_dir) { nil }
+      let(:ssl_config) { instance_double(HTTPClient::SSLConfig, :verify_mode= => nil, set_default_paths: nil, add_trust_ca: nil) }
+      let(:httpclient) { instance_double(HTTPClient, ssl_config: ssl_config) }
 
       describe 'conforms to blobstore client interface' do
-        let(:ssl_config) { instance_double(HTTPClient::SSLConfig, :verify_mode= => nil, set_default_paths: nil, add_trust_ca: nil) }
-        let(:httpclient) { instance_double(HTTPClient, ssl_config: ssl_config) }
         let(:deletable_blob) { instance_double(DavBlob, key: nil) }
 
         before do
@@ -33,6 +33,20 @@ module BitsService
         end
 
         it_behaves_like 'a blobstore client'
+      end
+
+      context 'when creating a nginx secure link signer' do
+        before do
+          allow(HTTPClient).to receive_messages(new: httpclient)
+        end
+
+        it 'passes a copy of the httpclient to the NginxSigner instance' do
+          httpclient_clone = double('httpclient clone')
+          expect(httpclient).to receive(:clone).and_return(httpclient_clone)
+          expect(NginxSecureLinkSigner).to receive(:new).with(hash_including(http_client: httpclient_clone))
+
+          subject
+        end
       end
 
       describe '#configure_ssl' do

@@ -32,7 +32,8 @@ module BitsService
           public_endpoint:      @options[:public_endpoint],
           public_path_prefix:   @directory_key,
           basic_auth_user:      user,
-          basic_auth_password:  password
+          basic_auth_password:  password,
+          http_client:          @client.clone
         )
       end
 
