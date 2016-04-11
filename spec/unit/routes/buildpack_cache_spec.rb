@@ -60,21 +60,21 @@ module BitsService
         allow_any_instance_of(Routes::BuildpackCache).to receive(:buildpack_cache_blobstore).and_return(blobstore)
       end
 
-      describe 'PUT /buildpack_cache_entries' do
+      describe 'PUT /buildpack_cache/entries' do
         before do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
           allow(blobstore).to receive(:cp_to_blobstore)
         end
 
         it 'returns HTTP status 201' do
-          put "/buildpack_cache_entries/#{key}", upload_body, headers
+          put "/buildpack_cache/entries/#{key}", upload_body, headers
           expect(last_response.status).to eq(201)
         end
 
         it 'stores the uploaded file in the buildpak_cache blobstore using the correct key' do
           expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, key)
 
-          put "/buildpack_cache_entries/#{key}", upload_body, headers
+          put "/buildpack_cache/entries/#{key}", upload_body, headers
         end
 
         it 'instantiates the upload params decorator with the right arguments' do
@@ -82,19 +82,19 @@ module BitsService
                                                                   'buildpack_cache' => anything
           ), use_nginx: false).once
 
-          put "/buildpack_cache_entries/#{key}", upload_body, headers
+          put "/buildpack_cache/entries/#{key}", upload_body, headers
         end
 
         it 'gets the uploaded filepath from the upload params decorator' do
           decorator = double(Helpers::Upload::Params)
           allow(Helpers::Upload::Params).to receive(:new).and_return(decorator)
           expect(decorator).to receive(:upload_filepath).with('buildpack_cache').once
-          put "/buildpack_cache_entries/#{key}", upload_body, headers
+          put "/buildpack_cache/entries/#{key}", upload_body, headers
         end
 
         it 'does not leave the temporary instance of the uploaded file around' do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-          put "/buildpack_cache_entries/#{key}", upload_body, headers
+          put "/buildpack_cache/entries/#{key}", upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
         end
 
@@ -106,7 +106,7 @@ module BitsService
           it 'returns a corresponding error' do
             expect_any_instance_of(Routes::Buildpacks).to_not receive(:buildpack_blobstore)
 
-            put "/buildpack_cache_entries/#{key}", upload_body, headers
+            put "/buildpack_cache/entries/#{key}", upload_body, headers
 
             expect(last_response.status).to eq(400)
             json = JSON.parse(last_response.body)
@@ -121,13 +121,13 @@ module BitsService
           end
 
           it 'return HTTP status 500' do
-            put "/buildpack_cache_entries/#{key}", upload_body, headers
+            put "/buildpack_cache/entries/#{key}", upload_body, headers
             expect(last_response.status).to eq(500)
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-            put "/buildpack_cache_entries/#{key}", upload_body, headers
+            put "/buildpack_cache/entries/#{key}", upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
         end
@@ -138,13 +138,13 @@ module BitsService
           end
 
           it 'return HTTP status 500' do
-            put "/buildpack_cache_entries/#{key}", upload_body, headers
+            put "/buildpack_cache/entries/#{key}", upload_body, headers
             expect(last_response.status).to eq(500)
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-            put "/buildpack_cache_entries/#{key}", upload_body, headers
+            put "/buildpack_cache/entries/#{key}", upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
         end
@@ -165,17 +165,17 @@ module BitsService
 
         it 'creates the buildpack cache blobstore using the blobstore factory' do
           expect_any_instance_of(Routes::BuildpackCache).to receive(:buildpack_cache_blobstore).at_least(:once)
-          get "/buildpack_cache_entries/#{key}", headers
+          get "/buildpack_cache/entries/#{key}", headers
         end
 
         it 'finds the blob inside the blobstore using the correct guid' do
           expect(blobstore).to receive(:blob).with(key)
-          get "/buildpack_cache_entries/#{key}", headers
+          get "/buildpack_cache/entries/#{key}", headers
         end
 
         it 'checks whether the blobstore is local' do
           expect(blobstore).to receive(:local?).once
-          get "/buildpack_cache_entries/#{key}", headers
+          get "/buildpack_cache/entries/#{key}", headers
         end
 
         context 'when the blobstore is local' do
@@ -191,18 +191,18 @@ module BitsService
             end
 
             it 'returns HTTP status code 200' do
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
               expect(last_response.status).to eq(200)
             end
 
             it 'sets the X-Accel-Redirect response header' do
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
               expect(last_response.headers).to include('X-Accel-Redirect' => download_url)
             end
 
             it 'gets the download_url from the blob' do
               expect(blob).to receive(:internal_download_url).once
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
             end
           end
 
@@ -214,33 +214,33 @@ module BitsService
             end
 
             it 'returns HTTP status code 200' do
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
               expect(last_response.status).to eq(200)
             end
 
             it 'sets the right Content-Type header' do
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
               expect(last_response.headers).to include('Content-Type' => 'application/zip')
             end
 
             it 'sets the right Content-Length header' do
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
               expect(last_response.headers).to include('Content-Length' => File.size(zip_filepath).to_s)
             end
 
             it 'returns the file contents in the response body' do
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
               expect(last_response.body).to eq(File.open(zip_filepath, 'rb').read)
             end
 
             it 'does not set the X-Accel-Redirect response header' do
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
               expect(last_response.headers).to_not include('X-Accel-Redirect')
             end
 
             it 'gets the local_path from the blob' do
               expect(blob).to receive(:local_path).once
-              get "/buildpack_cache_entries/#{key}", headers
+              get "/buildpack_cache/entries/#{key}", headers
             end
           end
         end
@@ -251,12 +251,12 @@ module BitsService
           end
 
           it 'returns HTTP status code 302' do
-            get "/buildpack_cache_entries/#{key}", headers
+            get "/buildpack_cache/entries/#{key}", headers
             expect(last_response.status).to eq(302)
           end
 
           it 'sets the location header to the correct value' do
-            get "/buildpack_cache_entries/#{key}", headers
+            get "/buildpack_cache/entries/#{key}", headers
             expect(last_response.headers).to include('Location' => download_url)
           end
         end
@@ -265,7 +265,7 @@ module BitsService
           let(:blob) { nil }
 
           it 'returns a corresponding error' do
-            get "/buildpack_cache_entries/#{key}", headers
+            get "/buildpack_cache/entries/#{key}", headers
 
             expect(last_response.status).to eq(404)
             json = JSON.parse(last_response.body)
@@ -275,7 +275,7 @@ module BitsService
         end
       end
 
-      describe 'DELETE /buildpack_cache_entries/:app_guid/:stack_name' do
+      describe 'DELETE /buildpack_cache/entries/:app_guid/:stack_name' do
         let(:blob) do
           double(BitsService::Blobstore::Blob)
         end
@@ -289,20 +289,20 @@ module BitsService
         end
 
         it 'returns HTTP status code 204' do
-          delete "/buildpack_cache_entries/#{key}", headers
+          delete "/buildpack_cache/entries/#{key}", headers
           expect(last_response.status).to eq(204)
         end
 
         it 'deletes the blob using the blobstore client' do
           expect(blobstore).to receive(:delete_blob).with(blob)
-          delete "/buildpack_cache_entries/#{key}", headers
+          delete "/buildpack_cache/entries/#{key}", headers
         end
 
         context 'when the buildpack cache does not exist' do
           let(:blob) { nil }
 
           it 'returns a corresponding error' do
-            delete "/buildpack_cache_entries/#{key}", headers
+            delete "/buildpack_cache/entries/#{key}", headers
 
             expect(last_response.status).to eq(404)
             json = JSON.parse(last_response.body)
@@ -312,7 +312,7 @@ module BitsService
         end
       end
 
-      describe 'DELETE /buildpack_cache_entries' do
+      describe 'DELETE /buildpack_cache/entries' do
         let(:blob) do
           double(BitsService::Blobstore::Blob)
         end
@@ -326,13 +326,13 @@ module BitsService
         end
 
         it 'returns HTTP status code 204' do
-          delete '/buildpack_cache_entries', headers
+          delete '/buildpack_cache/entries', headers
           expect(last_response.status).to eq(204)
         end
 
         it 'deletes all the blobs using the blobstore client' do
           expect(blobstore).to receive(:delete_all)
-          delete '/buildpack_cache_entries', headers
+          delete '/buildpack_cache/entries', headers
         end
       end
     end

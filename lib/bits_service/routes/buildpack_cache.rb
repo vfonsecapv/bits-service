@@ -3,7 +3,7 @@ require_relative './base'
 module BitsService
   module Routes
     class BuildpackCache < Base
-      put '/buildpack_cache_entries/:app_guid/:stack_name' do |app_guid, stack_name|
+      put '/buildpack_cache/entries/:app_guid/:stack_name' do |app_guid, stack_name|
         begin
           uploaded_filepath = upload_params.upload_filepath('buildpack_cache')
           fail Errors::ApiError.new_from_details('BuildpackCacheBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
@@ -16,7 +16,7 @@ module BitsService
         end
       end
 
-      get '/buildpack_cache_entries/:app_guid/:stack_name' do |app_guid, stack_name|
+      get '/buildpack_cache/entries/:app_guid/:stack_name' do |app_guid, stack_name|
         cache_key = key(app_guid, stack_name)
         blob = buildpack_cache_blobstore.blob(cache_key)
         fail Errors::ApiError.new_from_details('NotFound', cache_key) unless blob
@@ -32,7 +32,7 @@ module BitsService
         end
       end
 
-      delete '/buildpack_cache_entries/:app_guid/:stack_name' do |app_guid, stack_name|
+      delete '/buildpack_cache/entries/:app_guid/:stack_name' do |app_guid, stack_name|
         cache_key = key(app_guid, stack_name)
         blob = buildpack_cache_blobstore.blob(cache_key)
         fail Errors::ApiError.new_from_details('NotFound', cache_key) unless blob
@@ -40,7 +40,7 @@ module BitsService
         status 204
       end
 
-      delete '/buildpack_cache_entries' do
+      delete '/buildpack_cache/entries' do
         buildpack_cache_blobstore.delete_all
         status 204
       end
