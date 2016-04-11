@@ -21,6 +21,7 @@ groups:
   - deploy-CF-DIEGO
   - CATs-DIEGO
   - release-cf-diego-release-lock
+  - deploy-CF-DIEGO-with-BITS
 - name: bits-service
   jobs:
   - run-tests
@@ -49,6 +50,7 @@ groups:
   - deploy-CF-DIEGO
   - CATs-DIEGO
   - release-cf-diego-release-lock
+  - deploy-CF-DIEGO-with-BITS
 
 resources:
 - name: git-flintstone
@@ -658,7 +660,7 @@ jobs:
     file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
     config:
       params:
-        MANIFEST_STUBS: ci/manifests/enable-diego.yml
+        MANIFEST_STUBS: ci/manifests/enable-diego-cats.yml
   - aggregate:
     - task: deploy-CF
       file: git-bits-service-release/ci/tasks/deploy-release.yml
@@ -722,3 +724,59 @@ jobs:
     passed: [deploy-CF-DIEGO]
   - put: cf-diego-deployment-lock
     params: { release: cf-diego-deployment-lock }
+
+- name: deploy-CF-DIEGO-with-BITS
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-release-version
+      passed: [CATs-DIEGO]
+    - get: cf-diego-deployment-lock
+      trigger: true
+      passed: [CATs-DIEGO]
+    - get: bits-service-release-version
+      passed: [deploy-CF-DIEGO]
+    - get: git-bits-service-release
+      trigger: true
+      passed: [CATs-DIEGO]
+  - task: delete-deployment
+    file: git-bits-service-release/ci/tasks/delete-deployment.yml
+    config:
+      params:
+        DEPLOYMENT_NAME: cf-warden
+        BOSH_TARGET: {{bosh2-target}}
+        BOSH_USERNAME: {{bosh2-username}}
+        BOSH_PASSWORD: {{bosh2-password}}
+  - task: update-cf-manifest
+    file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
+    config:
+      params:
+        MANIFEST_STUBS: ci/manifests/enable-diego-cats.yml ci/manifests/enable-bits.yml templates/local.yml
+  - aggregate:
+    - task: turn-BITS-flag-ON
+      file: git-bits-service-release/ci/tasks/deploy-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: bits-service-release-version
+          - name: manifests
+        params:
+          MANIFEST_PATH: ../manifests/manifest.yml
+          BOSH_TARGET: {{bosh2-target}}
+          BOSH_USERNAME: {{bosh2-username}}
+          BOSH_PASSWORD: {{bosh2-password}}
+          RELEASE_VERSION_FILE: ../bits-service-release-version/number
+    - task: upload-to-object-storage
+      file: git-bits-service-release/ci/tasks/upload-to-object-storage.yml
+      config:
+        params:
+          OPENSTACK_AUTH_URL: {{openstack-auth-url}}
+          OPENSTACK_USER_NAME: {{openstack-user-name}}
+          OPENSTACK_API_KEY: {{openstack-api-key}}
+          VERSION_FILE: cf-release-version/number
+          FILE_GLOB: manifests/manifest.yml
+          REMOTE_FOLDER: cf-release-diego
+        inputs:
+          - name: cf-release-version
+          - name: git-bits-service-release
+          - name: manifests
