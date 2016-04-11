@@ -6,8 +6,10 @@ groups:
   - release-bits-release-lock
   - deploy-with-S3
   - deploy-with-LOCAL
+  - deploy-with-WEBDAV
   - run-system-tests-S3
   - run-system-tests-LOCAL
+  - run-system-tests-WEBDAV
   - done
   - cc-tests
   - create-and-upload-CF
@@ -25,8 +27,10 @@ groups:
   - release-bits-release-lock
   - deploy-with-S3
   - deploy-with-LOCAL
+  - deploy-with-WEBDAV
   - run-system-tests-S3
   - run-system-tests-LOCAL
+  - run-system-tests-WEBDAV
   - done
 - name: cloud-controller
   jobs:
@@ -305,6 +309,56 @@ jobs:
         BITS_SERVICE_ENDPOINT: 10.250.0.2
         RELEASE_NAME: bits-service-local
 
+- name: deploy-with-WEBDAV
+  plan:
+  - aggregate:
+    - get: bits-release-deployment-lock
+      trigger: true
+      passed: [create-and-upload-release]
+    - get: bits-service-release-version
+      passed: [create-and-upload-release]
+    - get: git-bits-service-release
+      passed: [create-and-upload-release]
+  - task: create-manifest
+    file: git-bits-service-release/ci/tasks/create-bits-manifest.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        BLOBSTORE_TYPE: webdav
+  - task: deploy
+    file: git-bits-service-release/ci/tasks/deploy-release.yml
+    config:
+      inputs:
+        - name: git-bits-service-release
+        - name: manifests
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        MANIFEST_PATH: ../manifests/manifest.yml
+
+- name: run-system-tests-WEBDAV
+  plan:
+  - aggregate:
+    - get: bits-release-deployment-lock
+      trigger: true
+      passed: [deploy-with-WEBDAV]
+    - get: bits-service-release-version
+      passed: [deploy-with-WEBDAV]
+    - get: git-bits-service-release
+      passed: [deploy-with-WEBDAV]
+  - task: run-tests
+    file: git-bits-service-release/ci/tasks/run-tests.yml
+    config:
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        BITS_SERVICE_ENDPOINT: 10.250.3.2
+        RELEASE_NAME: bits-service-webdav
+
 - name: done
   plan:
   - aggregate:
@@ -312,11 +366,13 @@ jobs:
       passed:
         - run-system-tests-LOCAL
         - run-system-tests-S3
+        - run-system-tests-WEBDAV
     - get: bits-release-deployment-lock
       trigger: true
       passed:
         - run-system-tests-LOCAL
         - run-system-tests-S3
+        - run-system-tests-WEBDAV
   - put: bits-release-deployment-lock
     params: { release: bits-release-deployment-lock }
 
