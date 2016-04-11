@@ -39,8 +39,8 @@ describe 'buildpack_cache resource', type: :integration do
   end
 
   let(:upload_body) { { buildpack_cache: zip_file } }
-  let(:resource_path) { "/buildpack_cache/#{key}" }
-  let(:collection_path) { '/buildpack_cache' }
+  let(:resource_path) { "/buildpack_cache_entries/#{key}" }
+  let(:collection_path) { '/buildpack_cache_entries' }
 
   let(:key) do
     guid = SecureRandom.uuid
@@ -51,7 +51,7 @@ describe 'buildpack_cache resource', type: :integration do
     blob_path(@root_dir, File.join('directory-key', 'buildpack_cache'), key)
   end
 
-  describe 'PUT /buildpack_cache' do
+  describe 'PUT /buildpack_cache_entries' do
     it 'returns HTTP status 201' do
       response = make_put_request(resource_path, upload_body)
       expect(response.code).to eq 201
@@ -80,7 +80,7 @@ describe 'buildpack_cache resource', type: :integration do
     end
   end
 
-  describe 'GET /buildpack_cache/:app_guid/:stack_name' do
+  describe 'GET /buildpack_cache_entries/:app_guid/:stack_name' do
     context 'when the buildpack cache exists' do
       before do
         make_put_request(resource_path, upload_body)
@@ -112,13 +112,13 @@ describe 'buildpack_cache resource', type: :integration do
 
     context 'when the stack name is missing' do
       it 'returns HTTP status code 404' do
-        response = make_get_request('/buildpack_cache/not-here')
+        response = make_get_request('/buildpack_cache_entries/not-here')
         expect(response.code).to eq 404
       end
     end
   end
 
-  describe 'DELETE /buildpack_cache/:app_guid/:stack_name' do
+  describe 'DELETE /buildpack_cache_entries/:app_guid/:stack_name' do
     context 'when the buildpack cache exists' do
       before do
         make_put_request(resource_path, upload_body)
@@ -138,7 +138,7 @@ describe 'buildpack_cache resource', type: :integration do
     end
 
     context 'when the buildpack cache does not exist' do
-      let(:resource_path) { '/buildpack_cache/not-existing/windows' }
+      let(:resource_path) { '/buildpack_cache_entries/not-existing/windows' }
 
       it 'returns HTTP status code 404' do
         response = make_delete_request(resource_path)
@@ -153,7 +153,7 @@ describe 'buildpack_cache resource', type: :integration do
     end
   end
 
-  describe 'DELETE /buildpack_cache' do
+  describe 'DELETE /buildpack_cache_entries' do
     let(:key1) { "#{SecureRandom.uuid}/some-stack-name" }
     let(:key2) { "#{SecureRandom.uuid}/some-stack-name" }
 
@@ -165,7 +165,7 @@ describe 'buildpack_cache resource', type: :integration do
 
     before do
       [key1, key2].each do |key|
-        make_put_request("/buildpack_cache/#{key}", { buildpack_cache: create_file_for_upload })
+        make_put_request("/buildpack_cache_entries/#{key}", { buildpack_cache: create_file_for_upload })
       end
     end
 
