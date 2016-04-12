@@ -15,8 +15,10 @@ RUN add-apt-repository ppa:brightbox/ruby-ng && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN gem install bundler --no-rdoc --no-ri && \
-    gem install bosh_cli -v 1.3177.0 --no-rdoc --no-ri
+RUN echo "gem: --no-rdoc --no-ri" > ~/.gemrc
+
+RUN gem install bundler && \
+    gem install bosh_cli -v 1.3177.0
 
 RUN wget https://github.com/cloudfoundry-incubator/spiff/releases/download/v1.0.7/spiff_linux_amd64.zip && \
     unzip spiff_linux_amd64.zip && mv spiff /usr/local/bin/ && rm spiff_linux_amd64.zip
@@ -24,12 +26,18 @@ RUN wget https://github.com/cloudfoundry-incubator/spiff/releases/download/v1.0.
 RUN wget https://github.com/geofffranks/spruce/releases/download/v1.1.2/spruce-linux-amd64 -O /usr/local/bin/spruce && \
     chmod +x /usr/local/bin/spruce
 
-RUN gem install --no-rdoc --no-ri \
+ADD ./cache_cf_release_blobs.sh /tmp/cache_cf_release_blobs.sh
+RUN /tmp/cache_cf_release_blobs.sh
+
+RUN gem install \
         unf_ext:0.0.7.2 \
         msgpack:0.5.9 \
         yajl-ruby:1.2.1 \
+        posix-spawn:0.3.11 \
         posix-spawn:0.3.9 \
+        thin:1.6.4 \
         puma:2.16.0 \
+        nokogiri:1.6.7.2 \
         nokogiri:1.6.7.1 \
         fog:1.34.0 \
         mime-types:3.0 \
