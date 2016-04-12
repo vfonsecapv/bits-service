@@ -44,3 +44,4 @@ RUN gem install \
         byebug:8.2.2 \
         json:1.8.3 \
         ffi:1.9.10
+
