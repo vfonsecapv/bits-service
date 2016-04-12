@@ -6,7 +6,7 @@ cd cf-release
 git checkout v233
 git submodule update --init --recursive
 
-bosh create release --with-tarball
+bosh create release --with-tarball --name cf-release
 
 cd ..
 rm -rf cf-release
