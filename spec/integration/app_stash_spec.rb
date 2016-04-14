@@ -219,7 +219,7 @@ describe 'app_stash endpoint', type: :integration do
     let(:existing_resources) do
       [
         { 'sha1' => app_rb_sha, 'fn' => 'app/app.rb' },
-        { 'sha1' => lib_rb_sha, 'fn' => 'app/lib.rb' },
+        { 'sha1' => lib_rb_sha, 'fn' => 'app/lib.rb', 'mode' => '777' },
       ]
     end
 
@@ -269,6 +269,12 @@ describe 'app_stash endpoint', type: :integration do
         resources.each do |spec|
           unzipped_file_path = File.join(unzip_path, spec[:fn])
           expect(BitsService::Digester.new.digest_path(unzipped_file_path)).to eq(spec[:sha1])
+
+          if spec[:mode]
+            expect(File.stat(unzipped_file_path).mode.to_s(8)).to eq("100#{spec[:mode]}")
+          else
+            expect(File.stat(unzipped_file_path).mode.to_s(8)).to eq("100#{BitsService::Routes::AppStash::DEFAULT_FILE_MODE.to_s(8)}")
+          end
         end
 
         expect(count_files_in_dir(unzip_path)).to eq(resources.size)
@@ -289,8 +295,8 @@ describe 'app_stash endpoint', type: :integration do
       let(:resources) do
         [
           { fn: 'init.rb', sha1: app_rb_sha },
-          { fn: 'lib.rb', sha1: lib_rb_sha },
-          { fn: 'another_one.rb', sha1: lib_rb_sha }
+          { fn: 'lib.rb', sha1: lib_rb_sha, mode: '777' },
+          { fn: 'another_one.rb', sha1: lib_rb_sha, mode: '700' }
         ]
       end
 
@@ -301,9 +307,9 @@ describe 'app_stash endpoint', type: :integration do
       let(:resources) do
         [
           { fn: 'init.rb', sha1: app_rb_sha },
-          { fn: 'some-folder/lib.rb', sha1: lib_rb_sha },
-          { fn: 'another-folder/inside/another_one.rb', sha1: lib_rb_sha },
-          { fn: 'some-folder/subfolder/app.rb', sha1: app_rb_sha }
+          { fn: 'some-folder/lib.rb', sha1: lib_rb_sha, mode: '600' },
+          { fn: 'another-folder/inside/another_one.rb', sha1: lib_rb_sha, mode: '766' },
+          { fn: 'some-folder/subfolder/app.rb', sha1: app_rb_sha, mode: '677' }
         ]
       end
 

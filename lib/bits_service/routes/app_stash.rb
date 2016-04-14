@@ -4,6 +4,8 @@ require 'fileutils'
 module BitsService
   module Routes
     class AppStash < Base
+      DEFAULT_FILE_MODE = 0744
+
       post '/app_stash/entries' do
         uploaded_filepath = upload_params.upload_filepath('application')
         fail Errors::ApiError.new_from_details(
@@ -41,7 +43,8 @@ module BitsService
 
           sha1 = resource['sha1']
           fn = resource['fn']
-          app_stash_blobstore.download_from_blobstore(sha1, File.join(destination_path, fn))
+          mode = parse_mode!(resource['mode'])
+          app_stash_blobstore.download_from_blobstore(sha1, File.join(destination_path, fn), mode: mode)
         end
 
         output_path = File.join(Dir.mktmpdir('app_stash'), 'bundle.zip')
@@ -59,6 +62,12 @@ module BitsService
       end
 
       private
+
+      def parse_mode!(raw_mode)
+        (raw_mode ? raw_mode.to_i(8) : DEFAULT_FILE_MODE).tap do |mode|
+          raise Errors::ApiError.new_from_details('AppResourcesFileModeInvalid', "File mode '#{raw_mode}' is invalid.") unless (mode & 0600) == 0600
+        end
+      end
 
       def valid_sha?(sha)
         sha.to_s.length == 40

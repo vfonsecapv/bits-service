@@ -223,7 +223,7 @@ module BitsService
     describe 'POST /app_stash/bundles' do
       let(:request_body) { [].to_json }
       let(:headers) { { content_type: :json } }
-      let(:resources) { [{ 'fn' => 'app.rb', 'sha1' => 'existing' }, { 'fn' => 'lib.rb', 'sha1' => 'existing' }] }
+      let(:resources) { [{ 'fn' => 'app.rb', 'sha1' => 'existing' }, { 'fn' => 'lib.rb', 'sha1' => 'existing', 'mode' => '666' }] }
       let(:output_file) { double(:output_file) }
 
       let(:destination_dir) { 'mock_destination_dir' }
@@ -248,7 +248,8 @@ module BitsService
       end
 
       it 'downloads each resource from the blobstore' do
-        expect(blobstore).to receive(:download_from_blobstore).with('existing', anything).twice
+        expect(blobstore).to receive(:download_from_blobstore).with('existing', anything, mode: Routes::AppStash::DEFAULT_FILE_MODE).once
+        expect(blobstore).to receive(:download_from_blobstore).with('existing', anything, mode: '666'.to_i(8)).once
         post '/app_stash/bundles', request_body, headers
       end
 
