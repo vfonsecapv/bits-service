@@ -12,7 +12,7 @@ module BitsService
       let(:tmp_dir) { '/path/to/tmp/dir' }
       let(:zip_filepath) { '/path/to/zip/file' }
       let(:request_body) { { application: 'something' } }
-      let(:receipt_contents) { [{ 'fn' => 'foo', 'sha1' => '1234' }] }
+      let(:receipt_contents) { [{ 'fn' => 'foo', 'sha1' => '1234', 'mode' => '766' }] }
 
       before do
         allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)

@@ -36,6 +36,8 @@ describe 'app_stash endpoint', type: :integration do
 
   describe 'POST /app_stash/entries' do
     let(:request_body) { { application: File.new(zip_filepath) } }
+    let(:app_rb_file_mode) { '777' }
+    let(:lib_rb_file_mode) { '666' }
 
     it 'returns 201 status' do
       response = make_post_request('/app_stash/entries', request_body)
@@ -60,8 +62,8 @@ describe 'app_stash endpoint', type: :integration do
       expect(json).to_not be_empty
       expect(json.size).to eq(2)
 
-      expect(json).to include({ 'fn' => 'app/app.rb', 'sha1' => app_rb_sha })
-      expect(json).to include({ 'fn' => 'app/lib.rb', 'sha1' => lib_rb_sha })
+      expect(json).to include({ 'fn' => 'app/app.rb', 'sha1' => app_rb_sha, 'mode' => app_rb_file_mode })
+      expect(json).to include({ 'fn' => 'app/lib.rb', 'sha1' => lib_rb_sha, 'mode' => lib_rb_file_mode })
     end
 
     context 'when the file is not a valid zip' do
