@@ -39,13 +39,10 @@ describe 'buildpack_cache resource', type: :integration do
   end
 
   let(:upload_body) { { buildpack_cache: zip_file } }
-  let(:resource_path) { "/buildpack_cache/entries/#{key}" }
+  let(:resource_path) { "#{collection_path}/#{key}" }
   let(:collection_path) { '/buildpack_cache/entries' }
-
-  let(:key) do
-    guid = SecureRandom.uuid
-    "#{guid}/some-stack-name"
-  end
+  let(:guid) { SecureRandom.uuid }
+  let(:key) { "#{guid}/some-stack-name" }
 
   def blobstore_path(key)
     blob_path(@root_dir, File.join('directory-key', 'buildpack_cache'), key)
@@ -149,6 +146,37 @@ describe 'buildpack_cache resource', type: :integration do
         response = make_delete_request(resource_path)
         description = JSON.parse(response.body)['description']
         expect(description).to eq 'Unknown request'
+      end
+    end
+  end
+
+  describe 'DELETE /buildpack_cache/entries/:app_guid' do
+    let(:resource_path_short) { "#{collection_path}/#{guid}" }
+
+    context 'when the buildpack cache exists' do
+      before do
+        make_put_request(resource_path, upload_body)
+      end
+
+      it 'returns HTTP status code 204' do
+        response = make_delete_request(resource_path_short)
+        expect(response.code).to eq 204
+      end
+
+      it 'removes the stored file' do
+        expected_path = blobstore_path(key)
+        expect(File).to exist(expected_path)
+        make_delete_request(resource_path_short)
+        expect(File).to_not exist(expected_path)
+      end
+    end
+
+    context 'when the buildpack cache does not exist' do
+      let(:resource_path) { '/buildpack_cache/entries/not-existing' }
+
+      it 'is a no-op and returns HTTP status code 204' do
+        response = make_delete_request(resource_path)
+        expect(response.code).to eq 204
       end
     end
   end

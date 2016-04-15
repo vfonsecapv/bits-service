@@ -32,6 +32,11 @@ module BitsService
         end
       end
 
+      delete '/buildpack_cache/entries/:app_guid' do |app_guid|
+        buildpack_cache_blobstore.delete_all_in_path(app_guid)
+        status 204
+      end
+
       delete '/buildpack_cache/entries/:app_guid/:stack_name' do |app_guid, stack_name|
         cache_key = key(app_guid, stack_name)
         blob = buildpack_cache_blobstore.blob(cache_key)

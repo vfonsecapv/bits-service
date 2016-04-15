@@ -18,7 +18,7 @@ module BitsService
 
       let(:guid) { SecureRandom.uuid }
 
-      let(:key) { '1234-5678-123456/stackname' }
+      let(:key) { "#{guid}/stackname" }
 
       let(:upload_body) { { buildpack_cache: zip_file } }
 
@@ -308,6 +308,38 @@ module BitsService
             json = JSON.parse(last_response.body)
             expect(json['code']).to eq(10_000)
             expect(json['description']).to match(/Unknown request/)
+          end
+        end
+      end
+
+      describe 'DELETE /buildpack_cache/entries/:app_guid' do
+        let(:blob) do
+          double(BitsService::Blobstore::Blob)
+        end
+
+        let(:blobstore) do
+          double(BitsService::Blobstore::Client, blob: blob)
+        end
+
+        before(:each) do
+          allow(blobstore).to receive(:delete_all_in_path)
+        end
+
+        it 'returns HTTP status code 204' do
+          delete "/buildpack_cache/entries/#{guid}", headers
+          expect(last_response.status).to eq(204)
+        end
+
+        it 'deletes the blob using the blobstore client' do
+          expect(blobstore).to receive(:delete_all_in_path).with(guid)
+          delete "/buildpack_cache/entries/#{guid}", headers
+        end
+
+        context 'when the blobstore operation fails' do
+          it 'returns a corresponding error' do
+            allow(blobstore).to receive(:delete_all_in_path).and_raise('some blobstore error')
+            delete "/buildpack_cache/entries/#{guid}", headers
+            expect(last_response.status).to eq(500)
           end
         end
       end
