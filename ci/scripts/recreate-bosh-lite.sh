@@ -38,8 +38,8 @@ function setup_boshlite {
 
 function upload_stemcell {
   echo "-- Uploading stemcell"
-  ssh $SSH_CONNECTION_STRING "wget 'https://s3.amazonaws.com/bosh-warden-stemcells/bosh-stemcell-3147-warden-boshlite-ubuntu-trusty-go_agent.tgz'"
-  ssh $SSH_CONNECTION_STRING "bosh upload stemcell bosh-stemcell-3147-warden-boshlite-ubuntu-trusty-go_agent.tgz"
+  ssh $SSH_CONNECTION_STRING "wget 'https://s3.amazonaws.com/bosh-warden-stemcells/bosh-stemcell-3147-warden-boshlite-ubuntu-trusty-go_agent.tgz' -O stemcell.tgz"
+  ssh $SSH_CONNECTION_STRING "bosh upload stemcell stemcell.tgz"
 }
 
 
