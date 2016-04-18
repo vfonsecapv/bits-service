@@ -836,9 +836,9 @@ jobs:
 - name: recreate-bosh-lite-1
   serial: true
   plan:
-  - get: git-bits-service-release
+  - get: git-bits-service
   - task: recreate-bosh-lite
-    file: git-bits-service-release/ci/tasks/recreate-bosh-lite.yml
+    file: git-bits-service/ci/tasks/recreate-bosh-lite.yml
     config:
       params:
         SSH_CONNECTION_STRING: root@10.155.248.181
@@ -850,9 +850,9 @@ jobs:
 - name: recreate-bosh-lite-2
   serial: true
   plan:
-  - get: git-bits-service-release
+  - get: git-bits-service
   - task: recreate-bosh-lite
-    file: git-bits-service-release/ci/tasks/recreate-bosh-lite.yml
+    file: git-bits-service/ci/tasks/recreate-bosh-lite.yml
     config:
       params:
         SSH_CONNECTION_STRING: root@10.155.248.185
