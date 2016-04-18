@@ -12,6 +12,7 @@ function setup_ssh {
   echo "$SSH_KEY" > ~/.ssh-key
   chmod 600 ~/.ssh-key
   ssh-add ~/.ssh-key
+  mkdir -p ~/.ssh && chmod 700 ~/.ssh
   ssh-keyscan -t rsa,dsa >> ~/.ssh/known_hosts
 }
 
