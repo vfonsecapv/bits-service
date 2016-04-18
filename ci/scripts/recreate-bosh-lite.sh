@@ -12,6 +12,7 @@ function setup_ssh {
   echo "$SSH_KEY" > ~/.ssh-key
   chmod 600 ~/.ssh-key
   ssh-add ~/.ssh-key
+  ssh-keyscan -t rsa,dsa >> ~/.ssh/known_hosts
 }
 
 function delete_vagrant_vm {
