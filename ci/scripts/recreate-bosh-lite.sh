@@ -31,11 +31,17 @@ function create_vagrant_vm {
 function setup_boshlite {
   echo "-- Logging in to the new director"
   ssh $SSH_CONNECTION_STRING "bosh target https://$BOSH_DIRECTOR_IP:25555 && bosh login admin admin"
-  echo "-- Uploading stemcell"
-  ssh $SSH_CONNECTION_STRING "bosh upload stemcell https://s3.amazonaws.com/bosh-warden-stemcells/bosh-stemcell-3147-warden-boshlite-ubuntu-trusty-go_agent.tgz"
+  upload_stemcell
   echo "-- Changing default user"
   ssh $SSH_CONNECTION_STRING "bosh create user $BOSH_USERNAME $BOSH_PASSWORD"
 }
+
+function upload_stemcell {
+  echo "-- Uploading stemcell"
+  wget "https://s3.amazonaws.com/bosh-warden-stemcells/bosh-stemcell-3147-warden-boshlite-ubuntu-trusty-go_agent.tgz"
+  ssh $SSH_CONNECTION_STRING "bosh upload stemcell bosh-stemcell-3147-warden-boshlite-ubuntu-trusty-go_agent.tgz"
+}
+
 
 function set_networking {
   echo "-- Setting up networking"
