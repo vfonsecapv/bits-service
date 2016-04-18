@@ -1,0 +1,18 @@
+---
+platform: linux
+
+image: docker:///flintstonecf/ci
+
+inputs:
+- name: git-bits-service-release
+
+params:
+  SSH_CONNECTION_STRING:
+  SSH_KEY:
+  BOSH_USERNAME:
+  BOSH_PASSWORD:
+  BOSH_DIRECTOR_IP:
+  VAGRANT_GATEWAY:
+
+run:
+  path: git-bits-service/ci/scripts/recreate-bosh-lite.sh

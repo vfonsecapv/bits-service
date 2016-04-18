@@ -53,6 +53,10 @@ groups:
   - release-cf-diego-release-lock
   - deploy-CF-DIEGO-with-BITS
   - CATs-DIEGO-with-bits
+- name: infrastructure
+  jobs:
+  - recreate-bosh-lite-1
+  - recreate-bosh-lite-2
 
 resources:
 - name: git-flintstone
@@ -438,13 +442,21 @@ jobs:
       params:
         VERSION_FILE: ../cf-release-version/number
   - aggregate:
-    - task: upload-release
+    - task: upload-release-bosh-1
       file: git-bits-service-release/ci/tasks/upload-release.yml
       config:
         params:
           BOSH_TARGET: {{bosh-target}}
           BOSH_USERNAME: {{bosh-username}}
           BOSH_PASSWORD: {{bosh-password}}
+          RELEASE_FILE: ../releases/release.tgz
+    - task: upload-release-bosh-2
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        params:
+          BOSH_TARGET: {{bosh2-target}}
+          BOSH_USERNAME: {{bosh2-username}}
+          BOSH_PASSWORD: {{bosh2-password}}
           RELEASE_FILE: ../releases/release.tgz
     - task: upload-to-object-storage
       file: git-bits-service-release/ci/tasks/upload-to-object-storage.yml
@@ -819,3 +831,34 @@ jobs:
         ERRAND_NAME: acceptance_tests
   - put: cf-diego-deployment-lock
     params: { release: cf-diego-deployment-lock }
+
+
+- name: recreate-bosh-lite-1
+  serial: true
+  plan:
+  - get: git-bits-service-release
+  - task: recreate-bosh-lite
+    file: git-bits-service-release/ci/tasks/recreate-bosh-lite.yml
+    config:
+      params:
+        SSH_CONNECTION_STRING: root@10.155.248.181
+        SSH_KEY: {{github-private-key}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        BOSH_DIRECTOR_IP: 192.168.50.4
+        VAGRANT_GATEWAY: 192.168.50.1
+- name: recreate-bosh-lite-2
+  serial: true
+  plan:
+  - get: git-bits-service-release
+  - task: recreate-bosh-lite
+    file: git-bits-service-release/ci/tasks/recreate-bosh-lite.yml
+    config:
+      params:
+        SSH_CONNECTION_STRING: root@10.155.248.185
+        SSH_KEY: {{github-private-key}}
+        BOSH_USERNAME: {{bosh2-username}}
+        BOSH_PASSWORD: {{bosh2-password}}
+        BOSH_DIRECTOR_IP: 192.168.100.4
+        VAGRANT_GATEWAY: 192.168.100.1
+
