@@ -9,13 +9,13 @@ function main {
 }
 
 function setup_ssh {
-  echo "$SSH_KEY" > ~/.ssh-key
-  chmod 600 ~/.ssh-key
+  echo "$SSH_KEY" > $PWD/.ssh-key
+  chmod 600 $PWD/.ssh-key
   mkdir -p ~/.ssh && chmod 700 ~/.ssh
   local ip=$(echo $SSH_CONNECTION_STRING | cut -d "@" -f2)
 
   ssh-keyscan -t rsa,dsa $ip >> ~/.ssh/known_hosts
-  export SSH_CONNECTION_STRING="$SSH_CONNECTION_STRING -i ~/.ssh-key"
+  export SSH_CONNECTION_STRING="$SSH_CONNECTION_STRING -i $PWD/.ssh-key"
 }
 
 function delete_vagrant_vm {
