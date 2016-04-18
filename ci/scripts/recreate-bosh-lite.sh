@@ -13,7 +13,9 @@ function setup_ssh {
   chmod 600 ~/.ssh-key
   ssh-add ~/.ssh-key
   mkdir -p ~/.ssh && chmod 700 ~/.ssh
-  ssh-keyscan -t rsa,dsa >> ~/.ssh/known_hosts
+  local ip=$(echo $SSH_CONNECTION_STRING | cut -d "@" -f2)
+
+  ssh-keyscan -t rsa,dsa $ip >> ~/.ssh/known_hosts
 }
 
 function delete_vagrant_vm {
