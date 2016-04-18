@@ -146,6 +146,7 @@ module BitsService
         url      = url(path) + '/'
         response = with_error_handling { @client.delete(url, header: @headers) }
         return if response.status == 204
+        return if response.status == 404 # if its already gone, we are happy
 
         raise FileNotFound.new("Could not find object '#{URI(url).path}', #{response.status}/#{response.content}") if response.status == 404
         raise BlobstoreError.new("Could not delete all in path, #{response.status}/#{response.content}")
