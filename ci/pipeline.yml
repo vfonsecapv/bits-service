@@ -96,12 +96,10 @@ resources:
   source:
     repository: cloudfoundry-incubator/diego-release
 
-- name: night-timer
+- name: nightly-timer
   type: time
   source:
-    interval: 10h
-    start: 1:00 AM -0000
-    stop: 8:00 AM -0000
+    interval: 24h
 
 - name: cf-deployment
   type: bosh-deployment
@@ -874,7 +872,7 @@ jobs:
   serial: true
   plan:
   - get: git-bits-service
-  - get: night-timer
+  - get: nightly-timer
     trigger: true
   - task: cleanup-bosh
     file: git-bits-service/ci/tasks/bosh-cleanup.yml
@@ -887,7 +885,7 @@ jobs:
   serial: true
   plan:
   - get: git-bits-service
-  - get: night-timer
+  - get: nightly-timer
     trigger: true
   - task: cleanup-bosh
     file: git-bits-service/ci/tasks/bosh-cleanup.yml
