@@ -759,7 +759,6 @@ jobs:
           BOSH_TARGET: {{bosh2-target}}
           BOSH_USERNAME: {{bosh2-username}}
           BOSH_PASSWORD: {{bosh2-password}}
-          RELEASE_VERSION_FILE: ../cf-release-version/number
       on_failure:
         put: cf-diego-deployment-lock
         params: { release: cf-diego-deployment-lock }
@@ -911,6 +910,7 @@ jobs:
         - CATs-with-bits
         - CATs-DIEGO-with-bits
     - get: cf-release-version
+      trigger: true
       passed:
         - CATs-with-bits
         - CATs-DIEGO-with-bits
@@ -965,6 +965,9 @@ jobs:
         BOSH_PASSWORD: {{bosh-password}}
         BOSH_DIRECTOR_IP: 192.168.50.4
         VAGRANT_GATEWAY: 192.168.50.1
+        DIEGO_RELEASE_VERSION: 0.1460.0
+        GARDEN_LINUX_RELEASE_VERSION: 0.334.0
+        ETCD_RELEASE_VERSION: 40
   - aggregate:
     - task: upload-last-bits-service-release
       file: git-bits-service-release/ci/tasks/upload-release.yml
