@@ -23,6 +23,7 @@ groups:
   - release-cf-diego-release-lock
   - deploy-CF-DIEGO-with-BITS
   - CATs-DIEGO-with-bits
+  - cf-release-done
 - name: bits-service
   jobs:
   - run-tests
@@ -53,6 +54,7 @@ groups:
   - release-cf-diego-release-lock
   - deploy-CF-DIEGO-with-BITS
   - CATs-DIEGO-with-bits
+  - cf-release-done
 - name: infrastructure
   jobs:
   - recreate-bosh-lite-1
@@ -79,6 +81,16 @@ resources:
     secret_access_key: {{s3-blobstore-secret-access-key}}
     bucket: ci-bits-service-artifacts
     regexp: cf-release/cf-(.*).tgz
+    region_name: eu-west-1
+    private: false
+
+- name: s3-cf-manifest
+  type: s3
+  source:
+    access_key_id: {{s3-blobstore-access-key-id}}
+    secret_access_key: {{s3-blobstore-secret-access-key}}
+    bucket: ci-bits-service-artifacts
+    regexp: cf-manifest/manifest-(.*).yml
     region_name: eu-west-1
     private: false
 
@@ -510,6 +522,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-cf-release
+      passed: [create-and-upload-CF]
     - put: cf-deployment-lock
       params: { acquire: true }
     - get: bits-service-release-version
@@ -543,7 +557,6 @@ jobs:
         BOSH_TARGET: {{bosh-target}}
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
-        RELEASE_VERSION_FILE: ../cf-release-version/number
     on_failure:
       put: cf-deployment-lock
       params: { release: cf-deployment-lock }
@@ -552,6 +565,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-cf-release
+      passed: [deploy-CF]
     - get: s3-bits-service-release
       passed: [deploy-CF]
     - get: cf-release-version
@@ -579,6 +594,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-cf-release
+      passed: [CATs]
     - get: s3-bits-service-release
       passed: [CATs]
     - get: cf-release-version
@@ -622,16 +639,25 @@ jobs:
           - name: bits-service-release-version
           - name: manifests
         params:
-          MANIFEST_PATH: ../manifests/manifest.yml
+          MANIFEST_PATH: ../manifests/manifest-*.yml
           BOSH_TARGET: {{bosh-target}}
           BOSH_USERNAME: {{bosh-username}}
           BOSH_PASSWORD: {{bosh-password}}
           RELEASE_VERSION_FILE: ../bits-service-release-version/number
+  - put: s3-cf-manifest
+    params:
+      file: manifests/*.yml
 
 - name: CATs-with-bits
   serial: true
   plan:
   - aggregate:
+    - get: s3-cf-manifest
+      passed: [turn-BITS-flag-ON]
+    - get: s3-cf-release
+      passed: [turn-BITS-flag-ON]
+    - get: cf-release-version
+      passed: [turn-BITS-flag-ON]
     - get: cf-deployment-lock
       trigger: true
       passed: [turn-BITS-flag-ON]
@@ -666,6 +692,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-cf-release
+      passed: [create-and-upload-CF]
     - get: s3-bits-service-release
       passed: [done]
     - get: diego-release
@@ -754,6 +782,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-cf-release
+      passed: [deploy-CF-DIEGO]
     - get: s3-bits-service-release
       passed: [deploy-CF-DIEGO]
     - get: cf-release-version
@@ -788,6 +818,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-cf-release
+      passed: [CATs-DIEGO]
     - get: s3-bits-service-release
       passed: [CATs-DIEGO]
     - get: cf-release-version
@@ -843,11 +875,15 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: cf-release-version
+      passed: [deploy-CF-DIEGO-with-BITS]
     - get: cf-diego-deployment-lock
       trigger: true
       passed: [deploy-CF-DIEGO-with-BITS]
     - get: git-bits-service-release
       trigger: true
+      passed: [deploy-CF-DIEGO-with-BITS]
+    - get: s3-cf-release
       passed: [deploy-CF-DIEGO-with-BITS]
   - task: run-cats
     config:
@@ -865,7 +901,51 @@ jobs:
   - put: cf-diego-deployment-lock
     params: { release: cf-diego-deployment-lock }
 
+- name: cf-release-done
+  plan:
+  - aggregate:
+    - get: s3-cf-manifest
+      passed: [CATs-with-bits]
+    - get: s3-cf-release
+      passed:
+        - CATs-with-bits
+        - CATs-DIEGO-with-bits
+    - get: cf-release-version
+      passed:
+        - CATs-with-bits
+        - CATs-DIEGO-with-bits
+    - get: git-bits-service-release
+      passed:
+        - CATs-with-bits
+        - CATs-DIEGO-with-bits
+  - task: upload-cf-release-to-acceptance
+    file: git-bits-service-release/ci/tasks/scp-to-acceptance.yml
+    config:
+      inputs:
+        - name: git-bits-service-release
+        - name: s3-cf-release
+        - name: cf-release-version
+      params:
+        SSH_CONNECTION_STRING: root@10.155.248.164
+        SSH_KEY: {{acceptance-private-key}}
+        FILE: s3-cf-release/*.tgz
+        VERSION_FILE: cf-release-version/number
+        RELEASE_NAME: cf-release
+  - task: upload-manifest-to-acceptance
+    file: git-bits-service-release/ci/tasks/scp-to-acceptance.yml
+    config:
+      inputs:
+        - name: git-bits-service-release
+        - name: s3-cf-release
+        - name: cf-release-version
+      params:
+        SSH_CONNECTION_STRING: root@10.155.248.164
+        SSH_KEY: {{acceptance-private-key}}
+        FILE: s3-cf-manifest/*.yml
+        VERSION_FILE: cf-release-version/number
+        RELEASE_NAME: cf-release
 
+# Infrastructure
 - name: recreate-bosh-lite-1
   serial: true
   plan:
