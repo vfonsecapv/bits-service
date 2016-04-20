@@ -61,6 +61,27 @@ groups:
   - cleanup-bosh-2
 
 resources:
+
+- name: s3-bits-service-release
+  type: s3
+  source:
+    access_key_id: {{s3-blobstore-access-key-id}}
+    secret_access_key: {{s3-blobstore-secret-access-key}}
+    bucket: ci-bits-service-artifacts
+    region_name: eu-west-1
+    regexp: bits-service-release/bits-service-(.*).tgz
+    private: false
+
+- name: s3-cf-release
+  type: s3
+  source:
+    access_key_id: {{s3-blobstore-access-key-id}}
+    secret_access_key: {{s3-blobstore-secret-access-key}}
+    bucket: ci-bits-service-artifacts
+    regexp: cf-release/cf-(.*).tgz
+    region_name: eu-west-1
+    private: false
+
 - name: git-flintstone
   type: git
   source:
@@ -209,20 +230,9 @@ jobs:
       on_failure:
         put: bits-release-deployment-lock
         params: { release: bits-release-deployment-lock }
-    - task: upload-to-object-storage
-      file: git-bits-service-release/ci/tasks/upload-to-object-storage.yml
-      config:
-        params:
-          OPENSTACK_AUTH_URL: {{openstack-auth-url}}
-          OPENSTACK_USER_NAME: {{openstack-user-name}}
-          OPENSTACK_API_KEY: {{openstack-api-key}}
-          VERSION_FILE: bits-service-release-version/number
-          FILE_GLOB: releases/bits-service-*.tgz
-          REMOTE_FOLDER: bits-service-release
-        inputs:
-          - name: bits-service-release-version
-          - name: git-bits-service-release
-          - name: releases
+    - put: s3-bits-service-release
+      params:
+        file: releases/*.tgz
       on_failure:
         put: bits-release-deployment-lock
         params: { release: bits-release-deployment-lock }
@@ -237,6 +247,8 @@ jobs:
 - name: deploy-with-S3
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [create-and-upload-release]
     - get: bits-release-deployment-lock
       trigger: true
       passed: [create-and-upload-release]
@@ -271,6 +283,8 @@ jobs:
 - name: run-system-tests-S3
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [deploy-with-S3]
     - get: bits-release-deployment-lock
       trigger: true
       passed: [deploy-with-S3]
@@ -291,6 +305,8 @@ jobs:
 - name: deploy-with-LOCAL
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [create-and-upload-release]
     - get: bits-release-deployment-lock
       trigger: true
       passed: [create-and-upload-release]
@@ -319,24 +335,12 @@ jobs:
           BOSH_USERNAME: {{bosh-username}}
           BOSH_PASSWORD: {{bosh-password}}
           MANIFEST_PATH: ../manifests/manifest.yml
-    - task: upload-to-object-storage
-      file: git-bits-service-release/ci/tasks/upload-to-object-storage.yml
-      config:
-        inputs:
-          - name: bits-service-release-version
-          - name: git-bits-service-release
-          - name: manifests
-        params:
-          OPENSTACK_AUTH_URL: {{openstack-auth-url}}
-          OPENSTACK_USER_NAME: {{openstack-user-name}}
-          OPENSTACK_API_KEY: {{openstack-api-key}}
-          VERSION_FILE: bits-service-release-version/number
-          FILE_GLOB: manifests/manifest.yml
-          REMOTE_FOLDER: bits-service-release
 
 - name: run-system-tests-LOCAL
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [deploy-with-LOCAL]
     - get: bits-release-deployment-lock
       trigger: true
       passed: [deploy-with-LOCAL]
@@ -358,6 +362,8 @@ jobs:
 - name: deploy-with-WEBDAV
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [create-and-upload-release]
     - get: bits-release-deployment-lock
       trigger: true
       passed: [create-and-upload-release]
@@ -388,6 +394,8 @@ jobs:
 - name: run-system-tests-WEBDAV
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [deploy-with-WEBDAV]
     - get: bits-release-deployment-lock
       trigger: true
       passed: [deploy-with-WEBDAV]
@@ -408,6 +416,11 @@ jobs:
 - name: done
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed:
+        - run-system-tests-LOCAL
+        - run-system-tests-S3
+        - run-system-tests-WEBDAV
     - get: bits-service-release-version
       passed:
         - run-system-tests-LOCAL
@@ -456,7 +469,7 @@ jobs:
           BOSH_TARGET: {{bosh-target}}
           BOSH_USERNAME: {{bosh-username}}
           BOSH_PASSWORD: {{bosh-password}}
-          RELEASE_FILE: ../releases/release.tgz
+          RELEASE_FILE: ../releases/cf-*.tgz
     - task: upload-release-bosh-2
       file: git-bits-service-release/ci/tasks/upload-release.yml
       config:
@@ -464,21 +477,10 @@ jobs:
           BOSH_TARGET: {{bosh2-target}}
           BOSH_USERNAME: {{bosh2-username}}
           BOSH_PASSWORD: {{bosh2-password}}
-          RELEASE_FILE: ../releases/release.tgz
-    - task: upload-to-object-storage
-      file: git-bits-service-release/ci/tasks/upload-to-object-storage.yml
-      config:
-        params:
-          OPENSTACK_AUTH_URL: {{openstack-auth-url}}
-          OPENSTACK_USER_NAME: {{openstack-user-name}}
-          OPENSTACK_API_KEY: {{openstack-api-key}}
-          VERSION_FILE: cf-release-version/number
-          FILE_GLOB: releases/release.tgz
-          REMOTE_FOLDER: cf-release
-        inputs:
-          - name: cf-release-version
-          - name: git-bits-service-release
-          - name: releases
+          RELEASE_FILE: ../releases/cf-*.tgz
+    - put: s3-cf-release
+      params:
+        file: releases/*.tgz
       on_failure:
         put: cf-release-version
         params: { file: cf-release-version/number }
@@ -495,6 +497,8 @@ jobs:
     - get: bits-service-release-version
       passed: [done]
       trigger: true
+    - get: s3-bits-service-release
+      passed: [done]
     - get: cf-release-version
       passed: [create-and-upload-CF]
       trigger: true
@@ -530,6 +534,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [deploy-CF]
     - get: cf-release-version
       passed: [deploy-CF]
     - get: cf-deployment-lock
@@ -555,6 +561,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [CATs]
     - get: cf-release-version
       passed: [CATs]
     - get: cf-deployment-lock
@@ -576,6 +584,17 @@ jobs:
         BOSH_PASSWORD: {{bosh-password}}
   - task: create-colocated-cf-manifest
     file: git-bits-service-release/ci/tasks/create-colocated-cf-manifest.yml
+  - task: upload-last-bits-service-release
+    file: git-bits-service-release/ci/tasks/upload-release.yml
+    config:
+      inputs:
+        - name: git-bits-service-release
+        - name: s3-bits-service-release
+      params:
+        BOSH_TARGET: {{bosh-target}}
+        BOSH_USERNAME: {{bosh-username}}
+        BOSH_PASSWORD: {{bosh-password}}
+        RELEASE_FILE: ../s3-bits-service-release/*.tgz
   - aggregate:
     - task: turn-BITS-flag-ON
       file: git-bits-service-release/ci/tasks/deploy-release.yml
@@ -590,20 +609,6 @@ jobs:
           BOSH_USERNAME: {{bosh-username}}
           BOSH_PASSWORD: {{bosh-password}}
           RELEASE_VERSION_FILE: ../bits-service-release-version/number
-    - task: upload-to-object-storage
-      file: git-bits-service-release/ci/tasks/upload-to-object-storage.yml
-      config:
-        params:
-          OPENSTACK_AUTH_URL: {{openstack-auth-url}}
-          OPENSTACK_USER_NAME: {{openstack-user-name}}
-          OPENSTACK_API_KEY: {{openstack-api-key}}
-          VERSION_FILE: cf-release-version/number
-          FILE_GLOB: manifests/manifest.yml
-          REMOTE_FOLDER: cf-release
-        inputs:
-          - name: cf-release-version
-          - name: git-bits-service-release
-          - name: manifests
 
 - name: CATs-with-bits
   serial: true
@@ -643,6 +648,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [done]
     - get: diego-release
       trigger: true
     - put: cf-diego-deployment-lock
@@ -729,6 +736,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [deploy-CF-DIEGO]
     - get: cf-release-version
       passed: [deploy-CF-DIEGO]
     - get: cf-diego-deployment-lock
@@ -761,6 +770,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: s3-bits-service-release
+      passed: [CATs-DIEGO]
     - get: cf-release-version
       passed: [CATs-DIEGO]
     - get: cf-diego-deployment-lock
@@ -784,6 +795,17 @@ jobs:
     config:
       params:
         MANIFEST_STUBS: ci/manifests/enable-diego-cats.yml ci/manifests/enable-bits.yml templates/local.yml
+  - task: upload-last-bits-service-release
+    file: git-bits-service-release/ci/tasks/upload-release.yml
+    config:
+      inputs:
+        - name: git-bits-service-release
+        - name: s3-bits-service-release
+      params:
+        BOSH_TARGET: {{bosh2-target}}
+        BOSH_USERNAME: {{bosh2-username}}
+        BOSH_PASSWORD: {{bosh2-password}}
+        RELEASE_FILE: ../s3-bits-service-release/*.tgz
   - aggregate:
     - task: turn-BITS-flag-ON
       file: git-bits-service-release/ci/tasks/deploy-release.yml
@@ -798,20 +820,6 @@ jobs:
           BOSH_USERNAME: {{bosh2-username}}
           BOSH_PASSWORD: {{bosh2-password}}
           RELEASE_VERSION_FILE: ../bits-service-release-version/number
-    - task: upload-to-object-storage
-      file: git-bits-service-release/ci/tasks/upload-to-object-storage.yml
-      config:
-        params:
-          OPENSTACK_AUTH_URL: {{openstack-auth-url}}
-          OPENSTACK_USER_NAME: {{openstack-user-name}}
-          OPENSTACK_API_KEY: {{openstack-api-key}}
-          VERSION_FILE: cf-release-version/number
-          FILE_GLOB: manifests/manifest.yml
-          REMOTE_FOLDER: cf-release-diego
-        inputs:
-          - name: cf-release-version
-          - name: git-bits-service-release
-          - name: manifests
 
 - name: CATs-DIEGO-with-bits
   serial: true
@@ -843,7 +851,12 @@ jobs:
 - name: recreate-bosh-lite-1
   serial: true
   plan:
-  - get: git-bits-service
+  - aggregate:
+    - get: git-bits-service
+    - get: s3-bits-service-release
+      passed: [done]
+    - get: s3-cf-release
+      passed: [create-and-upload-CF]
   - task: recreate-bosh-lite
     file: git-bits-service/ci/tasks/recreate-bosh-lite.yml
     config:
@@ -854,10 +867,38 @@ jobs:
         BOSH_PASSWORD: {{bosh-password}}
         BOSH_DIRECTOR_IP: 192.168.50.4
         VAGRANT_GATEWAY: 192.168.50.1
+  - aggregate:
+    - task: upload-last-bits-service-release
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: s3-bits-service-release
+        params:
+          BOSH_TARGET: {{bosh-target}}
+          BOSH_USERNAME: {{bosh-username}}
+          BOSH_PASSWORD: {{bosh-password}}
+          RELEASE_FILE: ../s3-bits-service-release/*.tgz
+    - task: upload-last-cf-release
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: s3-cf-release
+        params:
+          BOSH_TARGET: {{bosh-target}}
+          BOSH_USERNAME: {{bosh-username}}
+          BOSH_PASSWORD: {{bosh-password}}
+          RELEASE_FILE: ../s3-cf-release/*.tgz
 - name: recreate-bosh-lite-2
   serial: true
   plan:
-  - get: git-bits-service
+  - aggregate:
+    - get: git-bits-service
+    - get: s3-bits-service-release
+      passed: [done]
+    - get: s3-cf-release
+      passed: [create-and-upload-CF]
   - task: recreate-bosh-lite
     file: git-bits-service/ci/tasks/recreate-bosh-lite.yml
     config:
@@ -868,6 +909,30 @@ jobs:
         BOSH_PASSWORD: {{bosh2-password}}
         BOSH_DIRECTOR_IP: 192.168.100.4
         VAGRANT_GATEWAY: 192.168.100.1
+  - aggregate:
+    - task: upload-last-bits-service-release
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: s3-bits-service-release
+        params:
+          BOSH_TARGET: {{bosh2-target}}
+          BOSH_USERNAME: {{bosh2-username}}
+          BOSH_PASSWORD: {{bosh2-password}}
+          RELEASE_FILE: ../s3-bits-service-release/*.tgz
+    - task: upload-last-cf-release
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: s3-cf-release
+        params:
+          BOSH_TARGET: {{bosh2-target}}
+          BOSH_USERNAME: {{bosh2-username}}
+          BOSH_PASSWORD: {{bosh2-password}}
+          RELEASE_FILE: ../s3-cf-release/*.tgz
+
 - name: cleanup-bosh-1
   serial: true
   plan:
