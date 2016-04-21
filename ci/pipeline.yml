@@ -936,7 +936,7 @@ jobs:
     config:
       inputs:
         - name: git-bits-service-release
-        - name: s3-cf-release
+        - name: s3-cf-manifest
         - name: cf-release-version
       params:
         SSH_CONNECTION_STRING: root@10.155.248.164
