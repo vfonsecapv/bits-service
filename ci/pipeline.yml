@@ -15,7 +15,7 @@ groups:
   - create-and-upload-CF
   - deploy-CF
   - CATs
-  - turn-BITS-flag-ON
+  - deploy-CF-with-BITS
   - CATs-with-bits
   - release-cf-release-lock
   - deploy-CF-DIEGO
@@ -46,7 +46,7 @@ groups:
   - create-and-upload-CF
   - deploy-CF
   - CATs
-  - turn-BITS-flag-ON
+  - deploy-CF-with-BITS
   - CATs-with-bits
   - release-cf-release-lock
   - deploy-CF-DIEGO
@@ -621,7 +621,7 @@ jobs:
         BOSH_PASSWORD: {{bosh-password}}
         ERRAND_NAME: acceptance_tests
 
-- name: turn-BITS-flag-ON
+- name: deploy-CF-with-BITS
   serial: true
   plan:
   - aggregate:
@@ -662,7 +662,7 @@ jobs:
         BOSH_PASSWORD: {{bosh-password}}
         RELEASE_FILE: ../s3-bits-service-release/*.tgz
   - aggregate:
-    - task: turn-BITS-flag-ON
+    - task: deploy-CF-with-BITS
       file: git-bits-service-release/ci/tasks/deploy-release.yml
       config:
         inputs:
@@ -684,18 +684,18 @@ jobs:
   plan:
   - aggregate:
     - get: s3-cf-manifest
-      passed: [turn-BITS-flag-ON]
+      passed: [deploy-CF-with-BITS]
     - get: s3-cf-release
-      passed: [turn-BITS-flag-ON]
+      passed: [deploy-CF-with-BITS]
     - get: cf-release-version
-      passed: [turn-BITS-flag-ON]
+      passed: [deploy-CF-with-BITS]
     - get: cf-deployment-lock
       trigger: true
-      passed: [turn-BITS-flag-ON]
+      passed: [deploy-CF-with-BITS]
     - get: git-bits-service-release
       trigger: true
       passed:
-       - turn-BITS-flag-ON
+       - deploy-CF-with-BITS
   - task: run-cats
     config:
       platform: linux
@@ -887,7 +887,7 @@ jobs:
         BOSH_PASSWORD: {{bosh2-password}}
         RELEASE_FILE: ../s3-bits-service-release/*.tgz
   - aggregate:
-    - task: turn-BITS-flag-ON
+    - task: deploy-CF-with-BITS
       file: git-bits-service-release/ci/tasks/deploy-release.yml
       config:
         inputs:
