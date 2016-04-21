@@ -475,7 +475,7 @@ jobs:
           - name: s3-bits-service-release
           - name: bits-service-release-version
         params:
-          SSH_CONNECTION_STRING: root@10.155.248.164
+          ACCEPTANCE_IP: {{acceptance-ip}}
           SSH_KEY: {{acceptance-private-key}}
           FILE: s3-bits-service-release/*.tgz
           VERSION_FILE: bits-service-release-version/number
@@ -488,7 +488,7 @@ jobs:
           - name: s3-bits-service-manifest
           - name: bits-service-release-version
         params:
-          SSH_CONNECTION_STRING: root@10.155.248.164
+          ACCEPTANCE_IP: {{acceptance-ip}}
           SSH_KEY: {{acceptance-private-key}}
           FILE: s3-bits-service-manifest/*.yml
           VERSION_FILE: bits-service-release-version/number
@@ -957,7 +957,7 @@ jobs:
         - name: s3-cf-release
         - name: cf-release-version
       params:
-        SSH_CONNECTION_STRING: root@10.155.248.164
+        ACCEPTANCE_IP: {{acceptance-ip}}
         SSH_KEY: {{acceptance-private-key}}
         FILE: s3-cf-release/*.tgz
         VERSION_FILE: cf-release-version/number
@@ -970,7 +970,7 @@ jobs:
         - name: s3-cf-manifest
         - name: cf-release-version
       params:
-        SSH_CONNECTION_STRING: root@10.155.248.164
+        ACCEPTANCE_IP: {{acceptance-ip}}
         SSH_KEY: {{acceptance-private-key}}
         FILE: s3-cf-manifest/*.yml
         VERSION_FILE: cf-release-version/number
