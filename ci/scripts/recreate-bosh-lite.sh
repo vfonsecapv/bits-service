@@ -56,7 +56,7 @@ function upload_remote_release {
   local release_url=$1
   echo "-- Uploading release: ${release_url}"
 
-  wget "$release_url" -O remote_release.tgz
+  ssh $SSH_CONNECTION_STRING "wget '$release_url' -O remote_release.tgz"
   ssh $SSH_CONNECTION_STRING "bosh upload release remote_release.tgz"
 }
 
