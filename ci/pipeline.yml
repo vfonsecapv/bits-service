@@ -115,7 +115,7 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cloud_controller_ng.git
-    branch: wip-bits-service
+    branch: bits-service
 
 - name: git-bits-service
   type: git
@@ -577,14 +577,17 @@ jobs:
     on_failure:
       put: cf-deployment-lock
       params: { release: cf-deployment-lock }
+  - task: update-cf-manifest
+    file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
   - task: deploy-CF
     file: git-bits-service-release/ci/tasks/deploy-release.yml
     config:
       inputs:
         - name: git-bits-service-release
         - name: bits-service-release-version
+        - name: manifests
       params:
-        MANIFEST_PATH: ../git-bits-service-release/ci/manifests/cf-without-flag.yml
+        MANIFEST_PATH: ../manifests/*.yml
         BOSH_TARGET: {{bosh-target}}
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
@@ -625,6 +628,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: cf-release-version
+      passed: [CATs]
     - get: s3-cf-release
       passed: [CATs]
     - get: s3-bits-service-release
@@ -648,8 +653,11 @@ jobs:
         BOSH_TARGET: {{bosh-target}}
         BOSH_USERNAME: {{bosh-username}}
         BOSH_PASSWORD: {{bosh-password}}
-  - task: create-colocated-cf-manifest
-    file: git-bits-service-release/ci/tasks/create-colocated-cf-manifest.yml
+  - task: update-cf-manifest
+    file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
+    config:
+      params:
+        MANIFEST_STUBS: ci/manifests/enable-bits.yml templates/local.yml
   - task: upload-last-bits-service-release
     file: git-bits-service-release/ci/tasks/upload-release.yml
     config:
@@ -786,7 +794,7 @@ jobs:
           - name: bits-service-release-version
           - name: manifests
         params:
-          MANIFEST_PATH: ../manifests/manifest.yml
+          MANIFEST_PATH: ../manifests/*.yml
           BOSH_TARGET: {{bosh2-target}}
           BOSH_USERNAME: {{bosh2-username}}
           BOSH_PASSWORD: {{bosh2-password}}
@@ -895,7 +903,7 @@ jobs:
           - name: bits-service-release-version
           - name: manifests
         params:
-          MANIFEST_PATH: ../manifests/manifest.yml
+          MANIFEST_PATH: ../manifests/*.yml
           BOSH_TARGET: {{bosh2-target}}
           BOSH_USERNAME: {{bosh2-username}}
           BOSH_PASSWORD: {{bosh2-password}}
@@ -981,6 +989,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-bits-service-release
     - get: git-bits-service
     - get: s3-bits-service-release
       passed: [done]
@@ -996,9 +1005,9 @@ jobs:
         BOSH_PASSWORD: {{bosh-password}}
         BOSH_DIRECTOR_IP: 192.168.50.4
         VAGRANT_GATEWAY: 192.168.50.1
-        DIEGO_RELEASE_VERSION: 0.1460.0
-        GARDEN_LINUX_RELEASE_VERSION: 0.334.0
-        ETCD_RELEASE_VERSION: 40
+        DIEGO_RELEASE_VERSION: {{diego-release-version}}
+        GARDEN_LINUX_RELEASE_VERSION: {{garden-linux-release-version}}
+        ETCD_RELEASE_VERSION: {{etcd-release-version}}
   - aggregate:
     - task: upload-last-bits-service-release
       file: git-bits-service-release/ci/tasks/upload-release.yml
@@ -1026,6 +1035,7 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-bits-service-release
     - get: git-bits-service
     - get: s3-bits-service-release
       passed: [done]
@@ -1041,6 +1051,9 @@ jobs:
         BOSH_PASSWORD: {{bosh2-password}}
         BOSH_DIRECTOR_IP: 192.168.100.4
         VAGRANT_GATEWAY: 192.168.100.1
+        DIEGO_RELEASE_VERSION: {{diego-release-version}}
+        GARDEN_LINUX_RELEASE_VERSION: {{garden-linux-release-version}}
+        ETCD_RELEASE_VERSION: {{etcd-release-version}}
   - aggregate:
     - task: upload-last-bits-service-release
       file: git-bits-service-release/ci/tasks/upload-release.yml
