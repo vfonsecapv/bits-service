@@ -131,13 +131,9 @@ resources:
 - name: git-cf-release
   type: git
   source:
-    uri: https://github.com/suhlig/cf-release.git
+    uri: git@github.com:suhlig/cf-release.git
     branch: wip-bits-service
-
-- name: diego-release
-  type: bosh-io-release
-  source:
-    repository: cloudfoundry-incubator/diego-release
+    private_key: {{github-private-key}}
 
 - name: nightly-timer
   type: time
@@ -735,8 +731,6 @@ jobs:
       passed: [create-and-upload-CF]
     - get: s3-bits-service-release
       passed: [done]
-    - get: diego-release
-      trigger: true
     - put: cf-diego-deployment-lock
       params: { acquire: true }
     - get: bits-service-release-version
@@ -747,17 +741,6 @@ jobs:
       trigger: true
     - get: git-bits-service-release
   - aggregate:
-    - task: upload-diego-release
-      file: git-bits-service-release/ci/tasks/upload-release.yml
-      config:
-        inputs:
-          - name: diego-release
-          - name: git-bits-service-release
-        params:
-          BOSH_TARGET: {{bosh2-target}}
-          BOSH_USERNAME: {{bosh2-username}}
-          BOSH_PASSWORD: {{bosh2-password}}
-          RELEASE_FILE: ../diego-release/release.tgz
     - task: delete-CF-deployment
       file: git-bits-service-release/ci/tasks/delete-deployment.yml
       config:
