@@ -23,6 +23,7 @@ groups:
   - release-cf-diego-release-lock
   - deploy-CF-DIEGO-with-BITS
   - CATs-DIEGO-with-bits
+  - deploy-CF-with-BITS-AWS
   - cf-release-done
 - name: bits-service
   jobs:
@@ -54,6 +55,7 @@ groups:
   - release-cf-diego-release-lock
   - deploy-CF-DIEGO-with-BITS
   - CATs-DIEGO-with-bits
+  - deploy-CF-with-BITS-AWS
   - cf-release-done
 - name: infrastructure
   jobs:
@@ -966,6 +968,71 @@ jobs:
         FILE: s3-cf-manifest/*.yml
         VERSION_FILE: cf-release-version/number
         RELEASE_NAME: cf-release
+
+- name: deploy-CF-with-BITS-AWS
+  serial: true
+  plan:
+  - aggregate:
+    - get: cf-release-version
+      passed: [create-and-upload-CF]
+    - get: s3-cf-release
+      passed: [create-and-upload-CF]
+    - get: s3-bits-service-release
+      passed: [done]
+    - get: cf-release-version
+      passed: [create-and-upload-CF]
+    - get: bits-service-release-version
+      passed: [done]
+    - get: git-bits-service-release
+      trigger: true
+      passed:
+        - create-and-upload-CF
+  - task: delete-deployment
+    file: git-bits-service-release/ci/tasks/delete-deployment.yml
+    config:
+      params:
+        DEPLOYMENT_NAME: cf
+        BOSH_TARGET: {{aws-bosh-target}}
+        BOSH_USERNAME: {{aws-bosh-username}}
+        BOSH_PASSWORD: {{aws-bosh-password}}
+  - task: update-cf-manifest
+    file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
+    config:
+      params:
+        IAAS: aws
+        MANIFEST_STUBS: ci/manifests/enable-bits.yml templates/local.yml
+        CF_USER: {{aws-cf-user}}
+        CF_PASSWORD: {{aws-cf-password}}
+        CF_DOMAIN: {{aws-cf-domain}}
+        CF_PUBLIC_IP: {{aws-cf-public-ip}}
+  - task: upload-last-bits-service-release
+    file: git-bits-service-release/ci/tasks/upload-release.yml
+    config:
+      inputs:
+        - name: git-bits-service-release
+        - name: s3-bits-service-release
+      params:
+        BOSH_TARGET: {{aws-bosh-target}}
+        BOSH_USERNAME: {{aws-bosh-username}}
+        BOSH_PASSWORD: {{aws-bosh-password}}
+        RELEASE_FILE: ../s3-bits-service-release/*.tgz
+  - aggregate:
+    - task: deploy-CF-with-BITS
+      file: git-bits-service-release/ci/tasks/deploy-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: bits-service-release-version
+          - name: manifests
+        params:
+          MANIFEST_PATH: ../manifests/manifest-*.yml
+          BOSH_TARGET: {{aws-bosh-target}}
+          BOSH_USERNAME: {{aws-bosh-username}}
+          BOSH_PASSWORD: {{aws-bosh-password}}
+          RELEASE_VERSION_FILE: ../bits-service-release-version/number
+#  - put: s3-cf-manifest
+#    params:
+#      file: manifests/*.yml
 
 # Infrastructure
 - name: recreate-bosh-lite-1
