@@ -59,6 +59,15 @@ vagrant ssh  #(into bosh2)
 ip route add 10.155.248.0/24 via 192.168.100.1 dev eth1
 ```
 
+Concourse needs to be able to ssh into the box. Therefore the CI user's public key needs to be added to the `~/.ssh/authorized_keys` file:
+
+```
+# regenerate the public key from the private one if necessary
+ssh-keygen -t rsa -f ./flintstone_id_rsa  -y > flintstone_id_rsa.pub
+
+cat flintstone_id_rsa.pub >> ~/.ssh/authorized_keys
+```
+
 # Update bosh-lite
 
 In order to update bosh-lite or re-create the vagrant vm do:
