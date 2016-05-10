@@ -5,6 +5,7 @@
 * Create a SL account
 * Create a [new VPN password](https://control.softlayer.com/account/user/profile)
 * Set up the [VPN client](http://knowledgelayer.softlayer.com/procedure/ssl-vpn-mac-os-x-1010)
+* Get access to shared Lastpass folder
 
 # Team Communication
 
