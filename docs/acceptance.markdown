@@ -38,3 +38,17 @@ To check the bits-service vm ip:
 ```
 bosh vms cf-warden
 ```
+
+## Install VirtualBox
+
+```
+# register the virtualbox package source
+echo 'deb http://download.virtualbox.org/virtualbox/debian vivid contrib' >> /etc/apt/sources.list
+
+# trust the key
+wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+
+# install Virtualbox
+apt-get update
+apt-get install virtualbox-5.0
+```
