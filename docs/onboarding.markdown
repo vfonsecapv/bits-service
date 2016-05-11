@@ -1,11 +1,11 @@
 # Onboarding a new Team Member
 
-* get access to the [tracker](https://www.pivotaltracker.com/n/projects/1406862)
-* add team member to a group with access to the [repo](https://github.com/cloudfoundry-incubator/bits-service)
-* Create a SL account
-* Create a [new VPN password](https://control.softlayer.com/account/user/profile)
-* Set up the [VPN client](http://knowledgelayer.softlayer.com/procedure/ssl-vpn-mac-os-x-1010)
-* Get access to shared Lastpass folder
+* Get access to the [tracker](https://www.pivotaltracker.com/n/projects/1406862) (ask the PM)
+* Add team member to a group with access to the [repo](https://github.com/cloudfoundry-incubator/bits-service) (ask the PM)
+* Create a SL account (ask the PM)
+* Create a [new VPN password](https://control.softlayer.com/account/user/profile) (DIY)
+* Set up the [VPN client](http://knowledgelayer.softlayer.com/procedure/ssl-vpn-mac-os-x-1010) (DIY)
+* Get access to shared Lastpass folder (ask the PM or anchor)
 
 # Team Communication
 
