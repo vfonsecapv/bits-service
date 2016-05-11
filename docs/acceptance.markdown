@@ -1,6 +1,6 @@
 # Acceptance
 
-The acceptance environment is located at [this softlayer box](https://control.softlayer.com/devices/details/889955). It's a bosh-light environment that's deployed manually.
+The acceptance environment is located at [this softlayer box](https://control.softlayer.com/devices/details/889955). It's a bosh-lite environment that's deployed manually.
 
 The pipeline is pushing every GREEN release tarball and the accompanying manifest to the acceptance box. All the manifests have no credentials except for the bosh/cf default ones. They are using local storage as fog configuration.
 
@@ -39,16 +39,6 @@ To check the bits-service vm ip:
 bosh vms cf-warden
 ```
 
-## Install VirtualBox
+## Installation
 
-```
-# register the virtualbox package source
-echo 'deb http://download.virtualbox.org/virtualbox/debian vivid contrib' >> /etc/apt/sources.list
-
-# trust the key
-wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
-
-# install Virtualbox
-apt-get update
-apt-get install virtualbox-5.0
-```
+bosh-lite was installed just as described in the [baremetal](baremetal-bosh-lite.markdown) docs.

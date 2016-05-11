@@ -1,27 +1,51 @@
-# How Bosh-lite was installed
+# How bosh-lite was installed
+
 ```
 # silence is golden
 touch ~/.hushlogin
 
 # prereqs
-apt-get install git vim unzip
+apt-get install git vim unzip wget
 
-# install or update vagrant manually - the 1.4.x version coming with Ubuntu 14.4
-# does not know all options in the bosh-lite config
+#
+# Vagrant
+#
 wget https://releases.hashicorp.com/vagrant/1.8.1/vagrant_1.8.1_x86_64.deb
 dpkg -i vagrant_1.8.1_x86_64.deb
 
-apt-get install virtualbox
+#
+# VirtualBox
+#
+
+# register the package source
+echo 'deb http://download.virtualbox.org/virtualbox/debian vivid contrib' >> /etc/apt/sources.list
+
+# trust the key
+wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+
+# install
+apt-get update
+apt-get install virtualbox-5.0
+
+#
+# bosh-lite
+#
+
+# get the stemcell
 wget https://s3.amazonaws.com/bosh-warden-stemcells/bosh-stemcell-3147-warden-boshlite-ubuntu-trusty-go_agent.tgz
 
+# get the latest source
 mkdir -p workspace
 git clone https://github.com/cloudfoundry/bosh-lite
 cd bosh-lite
 
+# start the VM
 vagrant up
 bin/add-route
 
-# ruby in ubuntu trusty is old and problematic -> install 2.3
+#
+# Ruby
+#
 apt-get install software-properties-common
 apt-add-repository ppa:brightbox/ruby-ng
 apt-get update
@@ -31,6 +55,9 @@ apt-get install ruby2.3
 echo 'gem: --no-rdoc --no-ri' >> ~/.gemrc
 gem install bundler bosh_cli
 
+#
+# spiff
+#
 wget https://github.com/cloudfoundry-incubator/spiff/releases/download/v1.0.7/spiff_linux_amd64.zip
 unzip spiff_linux_amd64.zip
 mv spiff /usr/local/bin/
