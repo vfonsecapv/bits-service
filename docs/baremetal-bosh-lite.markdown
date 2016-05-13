@@ -65,34 +65,81 @@ mv spiff /usr/local/bin/
 
 # Wire concourse and bosh-lite
 
+## Concourse
+
+### SSH keys
+
+Concourse needs to be able to ssh into the box. Therefore the CI user's public key needs to be added to the `~/.ssh/authorized_keys` file on each bare-metal box, e.g. with `cat flintstone_id_rsa.pub >> ~/.ssh/authorized_keys`.
+
+Regenerate the public key from the private one if necessary:
+
 ```
-# concourse:
-ip route add 192.168.50.0/24 via 10.155.248.181   # bosh1
-ip route add 192.168.100.0/24 via 10.155.248.185  # bosh2
+ssh-keygen -t rsa -f ./flintstone_id_rsa  -y > flintstone_id_rsa.pub
+```
+
+### IP routing
+
+ssh into the bare-metal box 'concourse' and execute:
+
+```
+# bosh1
+# access to BOSH director
+ip route add 192.168.50.0/24 via 10.155.248.181
+
+# access to bits-service VM
 ip route add 10.250.0.0/22 via 10.155.248.181
 
-# bare metal (bosh1):
+# bosh2
+# access to BOSH director
+ip route add 192.168.100.0/24 via 10.155.248.185
+
+# TODO We might need access to bits-service VM from bosh2, too:
+# ip route add 10.???.0.0/22 via 10.155.248.185
+
+# acceptance
+# access to BOSH director
+ip route add 192.168.150.0/24 via 10.155.248.164
+
+# Concourse does NOT need access to bits-service VM on acceptance
+```
+
+## bosh1
+
+ssh into the bare-metal box 'bosh1' and execute:
+
+```
 echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
 ip route add 10.250.0.0/16 via 192.168.50.4
 
-# bare metal (bosh2):
+cd ~/workspace/bosh-lite
+vagrant ssh
+ip route add 10.155.248.0/24 via 192.168.50.1 dev eth1
+```
+
+## bosh2
+
+ssh into the bare-metal box 'bosh2' and execute:
+
+```
 echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
 ip route add 10.250.0.0/16 via 192.168.100.4
 
-vagrant ssh  #(into bosh1)
-ip route add 10.155.248.0/24 via 192.168.50.1 dev eth1
-
-vagrant ssh  #(into bosh2)
+cd ~/workspace/bosh-lite
+vagrant ssh
 ip route add 10.155.248.0/24 via 192.168.100.1 dev eth1
 ```
 
-Concourse needs to be able to ssh into the box. Therefore the CI user's public key needs to be added to the `~/.ssh/authorized_keys` file:
+## acceptance
+
+ssh into the bare-metal box 'acceptance' and execute:
 
 ```
-# regenerate the public key from the private one if necessary
-ssh-keygen -t rsa -f ./flintstone_id_rsa  -y > flintstone_id_rsa.pub
+echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+ip route add 10.250.0.0/16 via 192.168.150.4
 
-cat flintstone_id_rsa.pub >> ~/.ssh/authorized_keys
+cd ~/workspace/bosh-lite
+vagrant ssh
+ip route add 10.155.248.0/24 via 192.168.150.1 dev eth1
 ```
 
 # Update bosh-lite
