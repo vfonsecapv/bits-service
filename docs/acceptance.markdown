@@ -39,6 +39,13 @@ To check the bits-service vm ip:
 bosh vms cf-warden
 ```
 
-## Installation
+## Diego
+To deploy diego to the acceptance bosh-lite:
 
+```
+bosh deployment ~/workspace/bits-service-release/ci/manifests/diego.yml
+bosh deploy
+```
+
+## Installation
 bosh-lite was installed just as described in the [baremetal](baremetal-bosh-lite.markdown) docs.
