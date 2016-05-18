@@ -42,6 +42,7 @@ cd bosh-lite
 # start the VM
 vagrant up
 bin/add-route
+# Make sure bin/add-route actually routes to the correct IP, e.g. for acceptance it's 192.168.150.4
 
 #
 # Ruby
