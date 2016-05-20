@@ -16,6 +16,7 @@ params:
   DIEGO_RELEASE_VERSION:
   ETCD_RELEASE_VERSION:
   GARDEN_LINUX_RELEASE_VERSION:
+  CFLINUXFS2_ROOTFS_RELEASE_VERSION:
 
 run:
   path: git-bits-service/ci/scripts/recreate-bosh-lite.sh

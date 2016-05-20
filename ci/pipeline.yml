@@ -1040,6 +1040,7 @@ jobs:
         DIEGO_RELEASE_VERSION: {{diego-release-version}}
         GARDEN_LINUX_RELEASE_VERSION: {{garden-linux-release-version}}
         ETCD_RELEASE_VERSION: {{etcd-release-version}}
+        CFLINUXFS2_ROOTFS_RELEASE_VERSION: {{cflinuxfs2-rootfs-release-version}}
   - aggregate:
     - task: upload-last-bits-service-release
       file: git-bits-service-release/ci/tasks/upload-release.yml
@@ -1087,6 +1088,8 @@ jobs:
         DIEGO_RELEASE_VERSION: {{diego-release-version}}
         GARDEN_LINUX_RELEASE_VERSION: {{garden-linux-release-version}}
         ETCD_RELEASE_VERSION: {{etcd-release-version}}
+        CFLINUXFS2_ROOTFS_RELEASE_VERSION: {{cflinuxfs2-rootfs-release-version}}
+  - aggregate:
   - aggregate:
     - task: upload-last-bits-service-release
       file: git-bits-service-release/ci/tasks/upload-release.yml
@@ -1134,6 +1137,7 @@ jobs:
         DIEGO_RELEASE_VERSION: {{diego-release-version}}
         GARDEN_LINUX_RELEASE_VERSION: {{garden-linux-release-version}}
         ETCD_RELEASE_VERSION: {{etcd-release-version}}
+        CFLINUXFS2_ROOTFS_RELEASE_VERSION: {{cflinuxfs2-rootfs-release-version}}
   - aggregate:
     - task: upload-last-bits-service-release
       file: git-bits-service-release/ci/tasks/upload-release.yml
