@@ -35,7 +35,7 @@ function setup_boshlite {
   upload_remote_release "https://bosh.io/d/github.com/cloudfoundry-incubator/diego-release?v=${DIEGO_RELEASE_VERSION}"
   upload_remote_release "https://bosh.io/d/github.com/cloudfoundry-incubator/etcd-release?v=${ETCD_RELEASE_VERSION}"
   upload_remote_release "https://bosh.io/d/github.com/cloudfoundry-incubator/garden-linux-release?v=${GARDEN_LINUX_RELEASE_VERSION}"
-  upload_remote_release "https://bosh.io/d/github.com/cloudfoundry-incubator/cflinuxfs2-rootfs-release?v=${CFLINUXFS2_ROOTFS_RELEASE_VERSION}"
+  upload_remote_release "https://bosh.io/d/github.com/cloudfoundry/cflinuxfs2-rootfs-release?v=${CFLINUXFS2_ROOTFS_RELEASE_VERSION}"
   echo "-- Changing default user"
   ssh $SSH_CONNECTION_STRING "bosh create user $BOSH_USERNAME $BOSH_PASSWORD"
 }
