@@ -1090,7 +1090,6 @@ jobs:
         ETCD_RELEASE_VERSION: {{etcd-release-version}}
         CFLINUXFS2_ROOTFS_RELEASE_VERSION: {{cflinuxfs2-rootfs-release-version}}
   - aggregate:
-  - aggregate:
     - task: upload-last-bits-service-release
       file: git-bits-service-release/ci/tasks/upload-release.yml
       config:
