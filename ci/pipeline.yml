@@ -611,6 +611,7 @@ jobs:
     - get: git-bits-service-release
       passed: [deploy-CF]
   - task: run-cats
+    attempts: 5
     config:
       platform: linux
       image: docker:///flintstonecf/ci
@@ -705,6 +706,7 @@ jobs:
       passed:
        - deploy-CF-with-BITS
   - task: run-cats
+    attempts: 5
     config:
       platform: linux
       image: docker:///flintstonecf/ci
@@ -819,6 +821,7 @@ jobs:
     - get: git-bits-service-release
       passed: [deploy-CF-DIEGO]
   - task: run-cats
+    attempts: 5
     config:
       platform: linux
       image: docker:///flintstonecf/ci
@@ -911,6 +914,7 @@ jobs:
     - get: s3-cf-release
       passed: [deploy-CF-DIEGO-with-BITS]
   - task: run-cats
+    attempts: 5
     config:
       platform: linux
       image: docker:///flintstonecf/ci
