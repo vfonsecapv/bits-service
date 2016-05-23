@@ -1,17 +1,17 @@
-title Create App Today
+title cf push --no-start 
 
-cf->CC: PUT /v2/apps/:guid
-CC-->cf: 201
-cf->CC: PUT /v2/resource_match [known file SHAs]
+cf->CC: POST /v2/apps
+CC-->cf: 201 <app-guid>
 
-loop existing files
+cf->CC: PUT /v2/resource_match <file fingerprints>
+loop fingeprints
   CC->Blobstore: HEAD file
-  Blobstore-->CC:
+  Blobstore-->CC: [200, 404]
 end
+CC-->cf: missing fingerprints
 
-CC-->cf: files to upload
-cf->cf: create ZIP
-cf->CC: POST /v2/apps/:guid/bits
+cf->cf: ZIP missing files
+cf->CC: PUT /v2/apps/:app-guid/bits <zip-file>
 
 loop existing files
   CC->Blobstore: fetch file
@@ -20,7 +20,13 @@ end
 
 loop new files
   CC->Blobstore: store file
-  Blobstore-->CC:
+  Blobstore-->CC: 201
 end
+CC-->cf: 201
 
-CC->CC: Assemble package
+CC->>CC: assemble package
+
+CC->>Blobstore: store package
+Blobstore-->CC: 201
+
+
