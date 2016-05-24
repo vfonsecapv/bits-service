@@ -25,6 +25,8 @@ groups:
   - deploy-CF-DIEGO-with-BITS
   - CATs-DIEGO-with-bits
   - cf-release-done
+  - CATs-aws
+  - release-cf1-aws-release-lock
 - name: bits-service
   jobs:
   - run-tests
@@ -57,6 +59,8 @@ groups:
   - deploy-CF-DIEGO-with-BITS
   - CATs-DIEGO-with-bits
   - cf-release-done
+  - CATs-aws
+  - release-cf1-aws-release-lock
 - name: infrastructure
   jobs:
   - recreate-bosh-lite-1
@@ -175,6 +179,13 @@ resources:
 #
 # locks
 #
+- name: cf1-aws-deployment-lock
+  type: pool
+  source:
+    uri: git@github.com:cloudfoundry-incubator/bits-service.git
+    branch: metadata
+    pool: locks/cf1-aws-deployment
+    private_key: {{github-private-key}}
 - name: cf-deployment-lock
   type: pool
   source:
@@ -979,8 +990,11 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - put: cf1-aws-deployment-lock
+      params: { acquire: true }
     - get: cf-release-version
       passed: [create-and-upload-CF]
+      trigger: true
     - get: s3-cf-release
       passed: [create-and-upload-CF]
     - get: s3-bits-service-release
@@ -990,9 +1004,6 @@ jobs:
     - get: bits-service-release-version
       passed: [done]
     - get: git-bits-service-release
-      trigger: true
-      passed:
-        - create-and-upload-CF
   - task: update-cf-manifest
     file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
     config:
@@ -1016,9 +1027,46 @@ jobs:
           CF_PASSWORD: {{aws-cf-password}}
           CF_DOMAIN: {{aws-cf-domain}}
           CF_PUBLIC_IP: {{aws-cf-public-ip}}
-#  - put: s3-cf-manifest
-#    params:
-#      file: manifests/*.yml
+      on_failure:
+        put: cf1-aws-deployment-lock
+        params: { release: cf1-aws-deployment-lock }
+
+- name: release-cf1-aws-release-lock
+  plan:
+  - get: cf1-aws-deployment-lock
+    passed: [deploy-cf-aws]
+  - put: cf1-aws-deployment-lock
+    params: { release: cf1-aws-deployment-lock }
+
+- name: CATs-aws
+  serial: true
+  plan:
+  - aggregate:
+    - get: s3-cf-release
+      passed: [deploy-cf-aws]
+    - get: s3-bits-service-release
+      passed: [deploy-cf-aws]
+    - get: cf-release-version
+      passed: [deploy-cf-aws]
+    - get: cf1-aws-deployment-lock
+      trigger: true
+      passed: [deploy-cf-aws]
+    - get: git-bits-service-release
+      passed: [deploy-cf-aws]
+  - task: run-cats
+    attempts: 5
+    config:
+      platform: linux
+      image: docker:///flintstonecf/ci
+      inputs:
+        - name: git-bits-service-release
+      run:
+        path: git-bits-service-release/ci/scripts/run-errand.sh
+      params:
+        BOSH_TARGET: {{aws-bosh-target}}
+        BOSH_USERNAME: {{aws-bosh-username}}
+        BOSH_PASSWORD: {{aws-bosh-password}}
+        ERRAND_NAME: acceptance_tests
 
 # Infrastructure
 - name: recreate-bosh-lite-1
