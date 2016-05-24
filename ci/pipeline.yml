@@ -1067,6 +1067,7 @@ jobs:
         BOSH_USERNAME: {{aws-bosh-username}}
         BOSH_PASSWORD: {{aws-bosh-password}}
         ERRAND_NAME: acceptance_tests
+        DEPLOYMENT_NAME: cf
 
 # Infrastructure
 - name: recreate-bosh-lite-1
