@@ -550,6 +550,14 @@ jobs:
           BOSH_USERNAME: {{bosh2-username}}
           BOSH_PASSWORD: {{bosh2-password}}
           RELEASE_FILE: ../releases/cf-*.tgz
+    - task: upload-release-bosh-aws
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        params:
+          BOSH_TARGET: {{aws-bosh-target}}
+          BOSH_USERNAME: {{aws-bosh-username}}
+          BOSH_PASSWORD: {{aws-bosh-password}}
+          RELEASE_FILE: ../releases/cf-*.tgz
     - put: s3-cf-release
       params:
         file: releases/*.tgz
