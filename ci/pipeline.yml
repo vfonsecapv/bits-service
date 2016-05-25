@@ -1004,11 +1004,23 @@ jobs:
     - get: bits-service-release-version
       passed: [done]
     - get: git-bits-service-release
-  - task: update-cf-manifest
-    file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
-    config:
-      params:
-        IAAS: aws
+  - aggregate:
+    - task: update-cf-manifest
+      file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
+      config:
+        params:
+          IAAS: aws
+    - task: delete-deployment
+      file: git-bits-service-release/ci/tasks/delete-deployment.yml
+      config:
+        params:
+          DEPLOYMENT_NAME: cf
+          BOSH_TARGET: {{aws-bosh-target}}
+          BOSH_USERNAME: {{aws-bosh-username}}
+          BOSH_PASSWORD: {{aws-bosh-password}}
+      on_failure:
+        put: cf1-aws-deployment-lock
+        params: { release: cf1-aws-deployment-lock }
   - aggregate:
     - task: deploy-cf
       file: git-bits-service-release/ci/tasks/deploy-release.yml
