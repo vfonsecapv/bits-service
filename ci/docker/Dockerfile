@@ -45,3 +45,5 @@ RUN gem install \
         json:1.8.3 \
         ffi:1.9.10
 
+RUN git config --global user.email "flintstone+cibot@cloudfoundry.org" \
+    git config --global user.name "Flintstone CI"
