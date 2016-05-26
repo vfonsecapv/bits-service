@@ -12,7 +12,7 @@ groups:
   - run-system-tests-WEBDAV
   - done
   - cc-tests
-  - create-and-upload-CF
+  - create-cf-release
   - deploy-CF
   - deploy-cf-aws
   - CATs
@@ -46,7 +46,7 @@ groups:
   - cc-tests
 - name: cf-release
   jobs:
-  - create-and-upload-CF
+  - create-cf-release
   - deploy-CF
   - deploy-cf-aws
   - CATs
@@ -518,7 +518,7 @@ jobs:
     file: git-flintstone/ci/cloud_controller_ng/tasks/run-tests.yml
 
 # CF-RELEASE
-- name: create-and-upload-CF
+- name: create-cf-release
   serial: true
   plan:
   - aggregate:
@@ -533,37 +533,12 @@ jobs:
     config:
       params:
         VERSION_FILE: ../cf-release-version/number
-  - aggregate:
-    - task: upload-release-bosh-1
-      file: git-bits-service-release/ci/tasks/upload-release.yml
-      config:
-        params:
-          BOSH_TARGET: {{bosh-target}}
-          BOSH_USERNAME: {{bosh-username}}
-          BOSH_PASSWORD: {{bosh-password}}
-          RELEASE_FILE: ../releases/cf-*.tgz
-    - task: upload-release-bosh-2
-      file: git-bits-service-release/ci/tasks/upload-release.yml
-      config:
-        params:
-          BOSH_TARGET: {{bosh2-target}}
-          BOSH_USERNAME: {{bosh2-username}}
-          BOSH_PASSWORD: {{bosh2-password}}
-          RELEASE_FILE: ../releases/cf-*.tgz
-    - task: upload-release-bosh-aws
-      file: git-bits-service-release/ci/tasks/upload-release.yml
-      config:
-        params:
-          BOSH_TARGET: {{aws-bosh-target}}
-          BOSH_USERNAME: {{aws-bosh-username}}
-          BOSH_PASSWORD: {{aws-bosh-password}}
-          RELEASE_FILE: ../releases/cf-*.tgz
-    - put: s3-cf-release
-      params:
-        file: releases/*.tgz
-      on_failure:
-        put: cf-release-version
-        params: { file: cf-release-version/number }
+  - put: s3-cf-release
+    params:
+      file: releases/*.tgz
+    on_failure:
+      put: cf-release-version
+      params: { file: cf-release-version/number }
   - put: cf-release-version
     params:
       file: cf-release-version/number
@@ -573,7 +548,7 @@ jobs:
   plan:
   - aggregate:
     - get: s3-cf-release
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
     - put: cf-deployment-lock
       params: { acquire: true }
     - get: bits-service-release-version
@@ -582,22 +557,34 @@ jobs:
     - get: s3-bits-service-release
       passed: [done]
     - get: cf-release-version
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
       trigger: true
     - get: git-bits-service-release
-  - task: delete-deployment
-    file: git-bits-service-release/ci/tasks/delete-deployment.yml
-    config:
-      params:
-        DEPLOYMENT_NAME: cf-warden
-        BOSH_TARGET: {{bosh-target}}
-        BOSH_USERNAME: {{bosh-username}}
-        BOSH_PASSWORD: {{bosh-password}}
-    on_failure:
-      put: cf-deployment-lock
-      params: { release: cf-deployment-lock }
-  - task: update-cf-manifest
-    file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
+  - aggregate:
+    - task: delete-deployment
+      file: git-bits-service-release/ci/tasks/delete-deployment.yml
+      config:
+        params:
+          DEPLOYMENT_NAME: cf-warden
+          BOSH_TARGET: {{bosh-target}}
+          BOSH_USERNAME: {{bosh-username}}
+          BOSH_PASSWORD: {{bosh-password}}
+      on_failure:
+        put: cf-deployment-lock
+        params: { release: cf-deployment-lock }
+    - task: upload-release
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: s3-cf-release
+        params:
+          BOSH_TARGET: {{bosh-target}}
+          BOSH_USERNAME: {{bosh-username}}
+          BOSH_PASSWORD: {{bosh-password}}
+          RELEASE_FILE: ../s3-cf-release/cf-*.tgz
+    - task: update-cf-manifest
+      file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
   - task: deploy-CF
     file: git-bits-service-release/ci/tasks/deploy-release.yml
     config:
@@ -753,7 +740,7 @@ jobs:
   plan:
   - aggregate:
     - get: s3-cf-release
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
     - get: s3-bits-service-release
       passed: [done]
     - put: cf-diego-deployment-lock
@@ -762,7 +749,7 @@ jobs:
       passed: [done]
       trigger: true
     - get: cf-release-version
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
       trigger: true
     - get: git-bits-service-release
   - aggregate:
@@ -788,11 +775,22 @@ jobs:
       on_failure:
         put: cf-diego-deployment-lock
         params: { release: cf-diego-deployment-lock }
-  - task: update-cf-manifest
-    file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
-    config:
-      params:
-        MANIFEST_STUBS: ci/manifests/enable-diego-cats.yml
+    - task: upload-release
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: s3-cf-release
+        params:
+          BOSH_TARGET: {{bosh2-target}}
+          BOSH_USERNAME: {{bosh2-username}}
+          BOSH_PASSWORD: {{bosh2-password}}
+          RELEASE_FILE: ../s3-cf-release/cf-*.tgz
+    - task: update-cf-manifest
+      file: git-bits-service-release/ci/tasks/update-cf-manifest.yml
+      config:
+        params:
+          MANIFEST_STUBS: ci/manifests/enable-diego-cats.yml
   - aggregate:
     - task: deploy-CF
       file: git-bits-service-release/ci/tasks/deploy-release.yml
@@ -1001,14 +999,14 @@ jobs:
     - put: cf1-aws-deployment-lock
       params: { acquire: true }
     - get: cf-release-version
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
       trigger: true
     - get: s3-cf-release
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
     - get: s3-bits-service-release
       passed: [done]
     - get: cf-release-version
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
     - get: bits-service-release-version
       passed: [done]
     - get: git-bits-service-release
@@ -1029,6 +1027,17 @@ jobs:
       on_failure:
         put: cf1-aws-deployment-lock
         params: { release: cf1-aws-deployment-lock }
+    - task: upload-release-bosh-aws
+      file: git-bits-service-release/ci/tasks/upload-release.yml
+      config:
+        inputs:
+          - name: git-bits-service-release
+          - name: s3-cf-release
+        params:
+          BOSH_TARGET: {{aws-bosh-target}}
+          BOSH_USERNAME: {{aws-bosh-username}}
+          BOSH_PASSWORD: {{aws-bosh-password}}
+          RELEASE_FILE: ../s3-cf-release/cf-*.tgz
   - aggregate:
     - task: deploy-cf
       file: git-bits-service-release/ci/tasks/deploy-release.yml
@@ -1099,7 +1108,7 @@ jobs:
     - get: s3-bits-service-release
       passed: [done]
     - get: s3-cf-release
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
   - task: recreate-bosh-lite
     file: git-bits-service/ci/tasks/recreate-bosh-lite.yml
     config:
@@ -1147,7 +1156,7 @@ jobs:
     - get: s3-bits-service-release
       passed: [done]
     - get: s3-cf-release
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
   - task: recreate-bosh-lite
     file: git-bits-service/ci/tasks/recreate-bosh-lite.yml
     config:
@@ -1195,7 +1204,7 @@ jobs:
     - get: s3-bits-service-release
       passed: [done]
     - get: s3-cf-release
-      passed: [create-and-upload-CF]
+      passed: [create-cf-release]
   - task: recreate-bosh-lite
     file: git-bits-service/ci/tasks/recreate-bosh-lite.yml
     config:

@@ -6,6 +6,7 @@ resources:
     branch: master
     paths:
     - ci/docker/Dockerfile
+    - ci/docker/cache_cf_release_blobs.sh
 - name: flintstone-ci-image
   type: docker-image
   source:
