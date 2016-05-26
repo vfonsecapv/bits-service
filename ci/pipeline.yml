@@ -27,6 +27,7 @@ groups:
   - cf-release-done
   - CATs-aws
   - release-cf1-aws-release-lock
+  - bump-cc-in-capi-release
 - name: bits-service
   jobs:
   - run-tests
@@ -44,6 +45,7 @@ groups:
 - name: cloud-controller
   jobs:
   - cc-tests
+  - bump-cc-in-capi-release
 - name: cf-release
   jobs:
   - create-cf-release
@@ -124,6 +126,13 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/cloud_controller_ng.git
     branch: bits-service
+
+- name: git-capi-release
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/capi-release.git
+    branch: bits-service
+    private_key: {{github-private-key}}
 
 - name: git-bits-service
   type: git
@@ -516,6 +525,32 @@ jobs:
       trigger: true
   - task: run-tests
     file: git-flintstone/ci/cloud_controller_ng/tasks/run-tests.yml
+
+- name: bump-cc-in-capi-release
+  serial: true
+  plan:
+  - aggregate:
+    - get: git-flintstone
+      passed: [cc-tests]
+    - get: git-capi-release
+    - get: git-cloud-controller
+      passed: [cc-tests]
+      trigger: true
+  - task: bump-cc
+    file: git-flintstone/ci/cloud_controller_ng/tasks/bump-submodule.yml
+    config:
+      inputs:
+        - name: git-flintstone
+        - name: git-capi-release
+        - name: git-cloud-controller
+      params:
+        SOURCE_SUBMODULE_REPO: git-cloud-controller
+        TARGET_REPO: git-capi-release
+        TARGET_SUBMODULE_PATH: src/cloud_controller_ng
+        COMMIT_MESSAGE: Bump CloudController
+  - put: git-capi-release
+    params:
+      repository: bumped/git-capi-release
 
 # CF-RELEASE
 - name: create-cf-release
