@@ -582,6 +582,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [create-cf-release]
     - get: s3-cf-release
       passed: [create-cf-release]
     - put: cf-deployment-lock
@@ -640,6 +642,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [deploy-CF]
     - get: s3-cf-release
       passed: [deploy-CF]
     - get: s3-bits-service-release
@@ -670,6 +674,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [CATs]
     - get: cf-release-version
       passed: [CATs]
     - get: s3-cf-release
@@ -733,6 +739,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [deploy-CF-with-BITS]
     - get: s3-cf-manifest
       passed: [deploy-CF-with-BITS]
     - get: s3-cf-release
@@ -774,6 +782,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [create-cf-release]
     - get: s3-cf-release
       passed: [create-cf-release]
     - get: s3-bits-service-release
@@ -861,6 +871,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [deploy-CF-DIEGO]
     - get: s3-cf-release
       passed: [deploy-CF-DIEGO]
     - get: s3-bits-service-release
@@ -898,6 +910,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [CATs-DIEGO]
     - get: s3-cf-release
       passed: [CATs-DIEGO]
     - get: s3-bits-service-release
@@ -955,6 +969,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [deploy-CF-DIEGO-with-BITS]
     - get: cf-release-version
       passed: [deploy-CF-DIEGO-with-BITS]
     - get: cf-diego-deployment-lock
@@ -987,6 +1003,10 @@ jobs:
   - aggregate:
     - get: s3-cf-manifest
       passed: [CATs-with-bits]
+    - get: git-cf-release
+      passed:
+        - CATs-with-bits
+        - CATs-DIEGO-with-bits
     - get: s3-cf-release
       passed:
         - CATs-with-bits
@@ -1031,6 +1051,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [create-cf-release]
     - put: cf1-aws-deployment-lock
       params: { acquire: true }
     - get: cf-release-version
@@ -1106,6 +1128,8 @@ jobs:
   serial: true
   plan:
   - aggregate:
+    - get: git-cf-release
+      passed: [deploy-cf-aws]
     - get: s3-cf-release
       passed: [deploy-cf-aws]
     - get: s3-bits-service-release
