@@ -48,10 +48,7 @@ describe 'buildpacks resource', type: :integration do
     "/buildpacks/#{guid}"
   end
 
-  let(:guid) do
-    response = make_post_request(collection_path, upload_body)
-    JSON.parse(response.body)['guid']
-  end
+  let(:guid) { SecureRandom.uuid }
 
   def blobstore_path(guid)
     blob_path(@root_dir, 'directory-key', guid)
@@ -59,15 +56,14 @@ describe 'buildpacks resource', type: :integration do
 
   describe 'POST /buildpack' do
     it 'returns HTTP status 201' do
-      response = make_post_request(collection_path, upload_body)
+      response = make_put_request(resource_path, upload_body)
       expect(response.code).to eq 201
     end
 
     it 'correctly stores the file in the blob store' do
-      response = make_post_request(collection_path, upload_body)
-      json_response = JSON.parse(response.body)
+      make_put_request(resource_path, upload_body)
 
-      expected_path = blobstore_path(json_response['guid'])
+      expected_path = blobstore_path(guid)
       expect(File).to exist(expected_path)
       expect(BitsService::Digester.new.digest_path(expected_path)).to eq zip_file_sha
     end
@@ -76,12 +72,12 @@ describe 'buildpacks resource', type: :integration do
       let(:upload_body) { { buildpack_name: 'original.zip' } }
 
       it 'returns HTTP status 400' do
-        response = make_post_request(collection_path, upload_body)
+        response = make_put_request(resource_path, upload_body)
         expect(response.code).to eq 400
       end
 
       it 'returns the expected error description' do
-        response = make_post_request(collection_path, upload_body)
+        response = make_put_request(resource_path, upload_body)
         description = JSON.parse(response.body)['description']
         expect(description).to eq 'The buildpack upload is invalid: a file must be provided'
       end
@@ -91,12 +87,12 @@ describe 'buildpacks resource', type: :integration do
       let(:upload_body) { { buildpack: zip_file } }
 
       it 'returns HTTP status 400' do
-        response = make_post_request(collection_path, upload_body)
+        response = make_put_request(resource_path, upload_body)
         expect(response.code).to eq 400
       end
 
       it 'returns the expected error description' do
-        response = make_post_request(collection_path, upload_body)
+        response = make_put_request(resource_path, upload_body)
         description = JSON.parse(response.body)['description']
         expect(description).to eq 'The buildpack upload is invalid: a filename must be specified'
       end
@@ -105,6 +101,10 @@ describe 'buildpacks resource', type: :integration do
 
   describe 'GET /buildpacks/:guid' do
     context 'when the buildpack exists' do
+      before do
+        make_put_request(resource_path, upload_body)
+      end
+
       it 'returns HTTP status code 200' do
         response = make_get_request(resource_path)
         expect(response.code).to eq 200
@@ -134,6 +134,10 @@ describe 'buildpacks resource', type: :integration do
 
   describe 'DELETE /buildpacks/:guid' do
     context 'when the buildpack exists' do
+      before do
+        make_put_request(resource_path, upload_body)
+      end
+
       it 'returns HTTP status code 204' do
         response = make_delete_request(resource_path)
         expect(response.code).to eq 204

@@ -61,15 +61,14 @@ module BitsService
         FileUtils.rm_f(non_zip_file.tempfile.path)
       end
 
-      describe 'POST /buildpacks' do
+      describe 'PUT /buildpacks/:guid' do
         before do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
           allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
-          allow(SecureRandom).to receive(:uuid).and_return(guid)
         end
 
         it 'returns HTTP status 201' do
-          post '/buildpacks', upload_body, headers
+          put "/buildpacks/#{guid}", upload_body, headers
           expect(last_response.status).to eq(201)
         end
 
@@ -78,15 +77,7 @@ module BitsService
           expect_any_instance_of(Routes::Buildpacks).to receive(:buildpack_blobstore).and_return(blobstore)
           expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, guid)
 
-          post '/buildpacks', upload_body, headers
-        end
-
-        it 'returns json with metadata about the upload' do
-          post '/buildpacks', upload_body, headers
-
-          json = JSON.parse(last_response.body)
-          expect(json['guid']).to eq(guid)
-          expect(json['digest']).to eq(zip_file_sha)
+          put "/buildpacks/#{guid}", upload_body, headers
         end
 
         it 'instantiates the upload params decorator with the right arguments' do
@@ -95,30 +86,19 @@ module BitsService
                                                                   'buildpack_name' => zip_filename
           ), use_nginx: false).once
 
-          post '/buildpacks', upload_body, headers
+          put "/buildpacks/#{guid}", upload_body, headers
         end
 
         it 'gets the uploaded filepath from the upload params decorator' do
           decorator = double(Helpers::Upload::Params)
           allow(Helpers::Upload::Params).to receive(:new).and_return(decorator)
           expect(decorator).to receive(:upload_filepath).with('buildpack').once
-          post '/buildpacks', upload_body, headers
-        end
-
-        it 'uses the default digester' do
-          expect(Digester).to receive(:new).with(no_args).once
-          post '/buildpacks', upload_body, headers
-        end
-
-        it 'gets the sha of the uploaded file from the digester' do
-          allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-          expect_any_instance_of(Digester).to receive(:digest_path).with(zip_filepath).once
-          post '/buildpacks', upload_body, headers
+          put "/buildpacks/#{guid}", upload_body, headers
         end
 
         it 'does not leave the temporary instance of the uploaded file around' do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-          post '/buildpacks', upload_body, headers
+          put "/buildpacks/#{guid}", upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
         end
 
@@ -130,7 +110,7 @@ module BitsService
           it 'returns a corresponding error' do
             expect_any_instance_of(Routes::Buildpacks).to_not receive(:buildpack_blobstore)
 
-            post '/buildpacks', upload_body, headers
+            put "/buildpacks/#{guid}", upload_body, headers
 
             expect(last_response.status).to eq(400)
             json = JSON.parse(last_response.body)
@@ -147,7 +127,7 @@ module BitsService
           it 'returns a corresponding error' do
             expect_any_instance_of(Routes::Buildpacks).to_not receive(:buildpack_blobstore)
 
-            post '/buildpacks', upload_body, headers
+            put "/buildpacks/#{guid}", upload_body, headers
 
             expect(last_response.status).to eq(400)
             json = JSON.parse(last_response.body)
@@ -161,7 +141,7 @@ module BitsService
 
           it 'returns a corresponding error' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return('invalid.tar')
-            post '/buildpacks', upload_body, headers
+            put "/buildpacks/#{guid}", upload_body, headers
 
             expect(last_response.status).to eql 400
             json = JSON.parse(last_response.body)
@@ -173,7 +153,7 @@ module BitsService
             filepath = non_zip_file.tempfile.path
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(filepath)
             allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
-            post '/buildpacks', upload_body, headers
+            put "/buildpacks/#{guid}", upload_body, headers
             expect(File.exist?(filepath)).to be_falsy
           end
         end
@@ -184,14 +164,14 @@ module BitsService
           end
 
           it 'return HTTP status 500' do
-            post '/buildpacks', upload_body, headers
+            put "/buildpacks/#{guid}", upload_body, headers
             expect(last_response.status).to eq(500)
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
             allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
-            post '/buildpacks', upload_body, headers
+            put "/buildpacks/#{guid}", upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
         end
@@ -202,14 +182,14 @@ module BitsService
           end
 
           it 'return HTTP status 500' do
-            post '/buildpacks', upload_body, headers
+            put "/buildpacks/#{guid}", upload_body, headers
             expect(last_response.status).to eq(500)
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
             allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
-            post '/buildpacks', upload_body, headers
+            put "/buildpacks/#{guid}", upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
         end

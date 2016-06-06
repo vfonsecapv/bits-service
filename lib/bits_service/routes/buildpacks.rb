@@ -3,7 +3,7 @@ require_relative './base'
 module BitsService
   module Routes
     class Buildpacks < Base
-      post '/buildpacks' do
+      put '/buildpacks/:guid' do |guid|
         begin
           uploaded_filepath = upload_params.upload_filepath('buildpack')
           original_filename = upload_params.original_filename('buildpack')
@@ -11,12 +11,9 @@ module BitsService
           fail Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'only zip files allowed') unless File.extname(original_filename) == '.zip'
           fail Errors::ApiError.new_from_details('BuildpackBitsUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s == ''
 
-          digest = Digester.new.digest_path(uploaded_filepath)
-          guid = SecureRandom.uuid
-
           buildpack_blobstore.cp_to_blobstore(uploaded_filepath, guid)
 
-          json 201, { guid: guid, digest: digest }
+          status 201
         ensure
           FileUtils.rm_f(uploaded_filepath) if uploaded_filepath
         end
