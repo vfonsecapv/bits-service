@@ -6,6 +6,7 @@ module IntegrationSetup
     (1..10).each do |attempt|
       begin
         make_get_request('/')
+        break
       rescue
         raise "Giving up starting http server after #{attempt} attempts" if attempt == 10
         sleep 0.5
