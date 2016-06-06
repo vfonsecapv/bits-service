@@ -36,7 +36,6 @@ describe 'droplet resource', type: :integration do
     File.new(zip_filepath)
   end
 
-  let(:collection_path) { '/droplets' }
   let(:upload_body) { { droplet: zip_file } }
   let(:resource_path) { "/droplets/#{guid}" }
   let(:guid) { SecureRandom.uuid }

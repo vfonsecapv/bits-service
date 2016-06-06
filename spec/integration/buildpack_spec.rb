@@ -38,17 +38,12 @@ describe 'buildpacks resource', type: :integration do
     File.new(zip_filepath)
   end
 
-  let(:collection_path) { '/buildpacks' }
-
+  let(:guid) { SecureRandom.uuid }
   let(:upload_body) { { buildpack: zip_file, buildpack_name: 'original.zip' } }
-
   let(:zip_file_sha) { BitsService::Digester.new.digest_path(zip_file) }
-
   let(:resource_path) do
     "/buildpacks/#{guid}"
   end
-
-  let(:guid) { SecureRandom.uuid }
 
   def blobstore_path(guid)
     blob_path(@root_dir, 'directory-key', guid)

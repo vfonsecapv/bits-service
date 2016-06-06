@@ -3,12 +3,12 @@ require_relative './base'
 module BitsService
   module Routes
     class Packages < Base
-      post '/packages' do
+      put '/packages/:guid' do |guid|
         uploaded_filepath = upload_params.upload_filepath('package')
-        return create_from_upload(uploaded_filepath) if uploaded_filepath
+        return create_from_upload(uploaded_filepath, guid) if uploaded_filepath
 
-        guid = parsed_body['source_guid']
-        return create_as_duplicate(guid) if guid
+        source_guid = parsed_body['source_guid']
+        return create_as_duplicate(source_guid, guid) if source_guid
 
         fail Errors::ApiError.new_from_details('InvalidPackageSource')
       end
@@ -31,23 +31,20 @@ module BitsService
         status 204
       end
 
-      def create_from_upload(uploaded_filepath)
+      def create_from_upload(uploaded_filepath, target_guid)
         fail Errors::ApiError.new_from_details('PackageUploadInvalid', 'a file must be provided') if uploaded_filepath.to_s.empty?
-        guid = SecureRandom.uuid
-        packages_blobstore.cp_to_blobstore(uploaded_filepath, guid)
-        json 201, { guid: guid }
+        packages_blobstore.cp_to_blobstore(uploaded_filepath, target_guid)
+        status 201
       ensure
         FileUtils.rm_f(uploaded_filepath) if uploaded_filepath
       end
 
-      def create_as_duplicate(guid)
-        blob = packages_blobstore.blob(guid)
-        fail Errors::ApiError.new_from_details('NotFound', guid) unless blob
+      def create_as_duplicate(source_guid, target_guid)
+        blob = packages_blobstore.blob(source_guid)
+        fail Errors::ApiError.new_from_details('NotFound', source_guid) unless blob
 
-        new_guid = SecureRandom.uuid
-        packages_blobstore.cp_file_between_keys(guid, new_guid)
-
-        json 201, { guid: new_guid }
+        packages_blobstore.cp_file_between_keys(source_guid, target_guid)
+        status 201
       end
 
       def parsed_body
