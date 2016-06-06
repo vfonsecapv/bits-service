@@ -18,13 +18,11 @@ module BitsService
         Rack::Test::UploadedFile.new(File.new(zip_filepath))
       end
 
-      let(:zip_file_sha) { Digester.new.digest_path(zip_file) }
-
       let(:non_zip_file) do
         Rack::Test::UploadedFile.new(Tempfile.new('foo'))
       end
 
-      let(:guid) { zip_file_sha }
+      let(:guid) { SecureRandom.uuid }
 
       let(:upload_body) { { droplet: zip_file, droplet_name: zip_filename } }
 
@@ -61,62 +59,40 @@ module BitsService
         FileUtils.rm_f(non_zip_file.tempfile.path)
       end
 
-      describe 'POST /droplets' do
+      describe 'PUT /droplets/:guid' do
         before do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
         end
 
         it 'returns HTTP status 201' do
-          post '/droplets', upload_body, headers
+          put "/droplets/#{guid}", upload_body, headers
           expect(last_response.status).to eq(201)
         end
 
         it 'stores the uploaded file in the droplet blobstore using the correct key' do
           blobstore = double(BitsService::Blobstore::Client)
           expect_any_instance_of(Routes::Droplets).to receive(:droplet_blobstore).and_return(blobstore)
-          expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, zip_file_sha)
+          expect(blobstore).to receive(:cp_to_blobstore).with(zip_filepath, guid)
 
-          post '/droplets', upload_body, headers
-        end
-
-        it 'returns json with metadata about the upload' do
-          post '/droplets', upload_body, headers
-
-          json = JSON.parse(last_response.body)
-          expect(json['guid']).to eq(zip_file_sha)
+          put "/droplets/#{guid}", upload_body, headers
         end
 
         it 'instantiates the upload params decorator with the right arguments' do
           expect(Helpers::Upload::Params).to receive(:new).with(hash_including('droplet' => anything), use_nginx: false).once
-          post '/droplets', upload_body, headers
+          put "/droplets/#{guid}", upload_body, headers
         end
 
         it 'gets the uploaded filepath from the upload params decorator' do
           decorator = double(Helpers::Upload::Params)
           allow(Helpers::Upload::Params).to receive(:new).and_return(decorator)
           expect(decorator).to receive(:upload_filepath).with('droplet').once
-          post '/droplets', upload_body, headers
+          put "/droplets/#{guid}", upload_body, headers
         end
 
         it 'does not leave the temporary instance of the uploaded file around' do
           allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-          post '/droplets', upload_body, headers
+          put "/droplets/#{guid}", upload_body, headers
           expect(File.exist?(zip_filepath)).to be_falsy
-        end
-
-        context 'when an empty file is being uploaded' do
-          let(:zip_filepath) do
-            path = File.join(Dir.mktmpdir, zip_filename)
-            TestZip.create(path, 1, 0)
-            path
-          end
-
-          it 'returns json with metadata about the upload' do
-            post '/droplets', upload_body, headers
-
-            json = JSON.parse(last_response.body)
-            expect(json['guid']).to eq(zip_file_sha)
-          end
         end
 
         context 'when no file is being uploaded' do
@@ -127,7 +103,7 @@ module BitsService
           it 'returns a corresponding error' do
             expect_any_instance_of(Routes::Droplets).to_not receive(:droplet_blobstore)
 
-            post '/droplets', upload_body, headers
+            put "/droplets/#{guid}", upload_body, headers
 
             expect(last_response.status).to eq(400)
             json = JSON.parse(last_response.body)
@@ -142,13 +118,13 @@ module BitsService
           end
 
           it 'return HTTP status 500' do
-            post '/droplets', upload_body, headers
+            put "/droplets/#{guid}", upload_body, headers
             expect(last_response.status).to eq(500)
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
-            post '/droplets', upload_body, headers
+            put "/droplets/#{guid}", upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
         end
@@ -159,14 +135,14 @@ module BitsService
           end
 
           it 'return HTTP status 500' do
-            post '/droplets', upload_body, headers
+            put "/droplets/#{guid}", upload_body, headers
             expect(last_response.status).to eq(500)
           end
 
           it 'does not leave the temporary instance of the uploaded file around' do
             allow_any_instance_of(Helpers::Upload::Params).to receive(:upload_filepath).and_return(zip_filepath)
             allow_any_instance_of(Helpers::Upload::Params).to receive(:original_filename).and_return(zip_filename)
-            post '/droplets', upload_body, headers
+            put "/droplets/#{guid}", upload_body, headers
             expect(File.exist?(zip_filepath)).to be_falsy
           end
         end

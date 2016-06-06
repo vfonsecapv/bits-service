@@ -37,33 +37,24 @@ describe 'droplet resource', type: :integration do
   end
 
   let(:collection_path) { '/droplets' }
-
   let(:upload_body) { { droplet: zip_file } }
-
-  let(:resource_path) do
-    "/droplets/#{guid}"
-  end
-
-  let(:guid) do
-    response = make_post_request(collection_path, upload_body)
-    JSON.parse(response.body)['guid']
-  end
+  let(:resource_path) { "/droplets/#{guid}" }
+  let(:guid) { SecureRandom.uuid }
 
   def blobstore_path(guid)
     blob_path(@root_dir, 'directory-key', guid)
   end
 
-  describe 'POST /droplets' do
+  describe 'PUT /droplets/:guid' do
     it 'returns HTTP status 201' do
-      response = make_post_request(collection_path, upload_body)
+      response = make_put_request(resource_path, upload_body)
       expect(response.code).to eq 201
     end
 
     it 'correctly stores the file in the blob store' do
-      response = make_post_request(collection_path, upload_body)
-      json_response = JSON.parse(response.body)
+      make_put_request(resource_path, upload_body)
 
-      expected_path = blobstore_path(json_response['guid'])
+      expected_path = blobstore_path(guid)
       expect(File).to exist(expected_path)
     end
 
@@ -71,12 +62,12 @@ describe 'droplet resource', type: :integration do
       let(:upload_body) { {} }
 
       it 'returns HTTP status 400' do
-        response = make_post_request(collection_path, upload_body)
+        response = make_put_request(resource_path, upload_body)
         expect(response.code).to eq 400
       end
 
       it 'returns the expected error description' do
-        response = make_post_request(collection_path, upload_body)
+        response = make_put_request(resource_path, upload_body)
         description = JSON.parse(response.body)['description']
         expect(description).to eq 'The droplet upload is invalid: a file must be provided'
       end
@@ -85,6 +76,10 @@ describe 'droplet resource', type: :integration do
 
   describe 'GET /droplets/:guid' do
     context 'when the droplet exists' do
+      before do
+        make_put_request(resource_path, upload_body)
+      end
+
       it 'returns HTTP status code 200' do
         response = make_get_request(resource_path)
         expect(response.code).to eq 200
@@ -114,6 +109,10 @@ describe 'droplet resource', type: :integration do
 
   describe 'DELETE /droplets/:guid' do
     context 'when the droplets exists' do
+      before do
+        make_put_request(resource_path, upload_body)
+      end
+
       it 'returns HTTP status code 204' do
         response = make_delete_request(resource_path)
         expect(response.code).to eq 204
